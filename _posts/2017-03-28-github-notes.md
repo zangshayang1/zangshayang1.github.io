@@ -220,6 +220,17 @@ If you want to compare your local repo with someone else's repo:
 > git remote rm someone
 ```
 
+When you pull from a repo with all kinds of runtime binaries and IDE-specific files. It won't go through because chances are that you have a lot of similar files, either untracked or modified but not committed in your local. But you really don't care about those auto-generated files and you just want to pull the update.  
+The following does:  
+1. fetch all from the target
+2. set local HEAD to FETCH_HEAD, which is a pointer to what has been fetched.
+3. clean all the untracked files.
+``` shell
+> git fetch target_repo target_branch
+> git reset --hard FETCH_HEAD
+> git clean -df
+```
+
 
 # Git Workflow
 
