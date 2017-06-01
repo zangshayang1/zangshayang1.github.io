@@ -220,6 +220,10 @@ If you want to compare your local repo with someone else's repo:
 > git remote rm someone
 ```
 
+Delete branch locally and remotely:
+> git push origin --delete <branch_name>
+> git branch -d <branch_name>
+
 When you pull from a repo with all kinds of runtime binaries and IDE-specific files. It won't go through because chances are that you have a lot of similar files, either untracked or modified but not committed in your local. But you really don't care about those auto-generated files and you just want to pull the update.  
 The following does:  
 1. fetch all from the target
