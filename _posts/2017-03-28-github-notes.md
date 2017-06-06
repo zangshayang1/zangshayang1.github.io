@@ -235,6 +235,10 @@ The following does:
 > git clean -df
 ```
 
+Rename local branch  
+> git checkout [target_branch]
+> git branch -m [new_branch_name]
+
 
 # Git Workflow
 
