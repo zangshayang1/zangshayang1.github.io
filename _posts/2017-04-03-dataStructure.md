@@ -105,9 +105,11 @@ __Problem:__ Given a collection of numbers and a range (L, R), return those that
 
 If the input is __static__, we can sort them in an array and binary search find the indices of two boundary points.
 
-However if the input is __dynamic__, array might not be a good data structure to use. With __regular binary search tree__, we can have insertion/deletion/find in O(logn). So if we find the two boundary nodes, L & R, how many values are in between? However, if we can associate a __rank__ field with each node which indicates the corresponding indices of the node value in the sorted array, _the answer = (the rank of R) - (the rank of L) + 1_.  
+However if the input is __dynamic__, array might not be a good data structure to use. With __regular binary search tree__, we can have insertion/deletion/find in O(logn).  
 
-[Augmented Binary Search Tree](https://en.wikipedia.org/wiki/Order_statistic_tree)  
+__Problem continue:__ If we find the two boundary nodes, L & R, how many values are in between?  
+
+BST can no longer gives us O(logn) performance and array implementation cannot provide dynamic updates. This problem introduces [Augmented Binary Search Tree](https://en.wikipedia.org/wiki/Order_statistic_tree) where we can associate a __rank__ field with each node which indicates the corresponding indices of the node value in the sorted array. _The answer to the problem = (the rank of R) - (the rank of L) + 1_.  
 
 ```
 # To compute rank, we need to compute a "size" for each node during construction
@@ -119,7 +121,7 @@ def rank(X, root):
   if X is external: return 0
   if X < root: return rank(X, root.left)
   if X == root: return X.left.size + 1
-  else: return X.left.size + 1 + rank(X, root.right)
+  else: return root.left.size + 1 + rank(X, root.right)
 
 # Given a rank, return the corresponding node value
 # simulate array access in O(logn)
@@ -129,7 +131,9 @@ def get(rank, root):
   else: return get(rank - root.left.size - 1, root.right)
 ```
 
-If we associate different fields with each node, we can compute different statics quickly, and thus different application. For example - __range min-priority query problem:__ Given that each node is associated with a priority, return the lowest priority among the nodes whose values range from L to R.  
+If we associate different fields with each node, we can compute different statics quickly, and thus different application.  
+
+As an extension, for example - __range min-priority query problem:__ Given that each node is associated with a priority, return the lowest priority among the nodes whose values range from L to R.  
 
 ```
 # let each node has a min field, computed during construction
@@ -148,7 +152,7 @@ def minPriority(L, R, root):
                    # this part is quite elegant
 ```
 
-[Other type of range queries](https://en.wikipedia.org/wiki/Range_query_(data_structures))  
+Addition: [Other type of range queries](https://en.wikipedia.org/wiki/Range_query_(data_structures))  
 
 ### 2D Range Query
 
@@ -166,6 +170,99 @@ From half plane reporting problem, we can abstract the fundamental subproblem: [
 1. merging half of the elements in the last list to the previous one.
 2. for each element, associate it with its position in current list and the position in the next list.
 We can achieve a solution for such a problem in O(n) space and O(logn + outputSize) time complexity.  
+
+### LCA and Cartesian Tree
+
+Last update: 20170607  
+
+#### Background
+
+__River network problem:__ River mouth is the root, pointing at one or more children node, which point at some more. Each node stores the distance between itself and the root. Given two node X, Y, return their minimum distance.  
+
+__Naively:__ Of course, one can use a 2D array to store every distance of such pair(X, Y) and returns the query in O(1). But it will be more space efficient if we can store the info in a Tree structure and still provide fast queries.    
+
+__Problem Modeling:__
+```
+dist(X, Y) = dist(X, root) + dist(Y, root) - 2 * dist(LCA(X, Y), root)
+
+* LCA: lowest common ancestor.
+```
+
+Note:
+1. If we traverse the tree from the root, it takes O(logn) to find X.
+2. If we have a mapping relation, we can find X in O(1).
+
+__Problem Reduction:__ River network problem reduced to LCA problem. The river network problem forms a tree structure that is [cartesian tree](https://en.wikipedia.org/wiki/Cartesian_tree) in computer science. __Cartesian Tree__ can be built up from any sequence of numbers in linear time, which means _range minimum problem can be reduced to LCA problem_. Reversely, with [Euler tour](https://en.wikipedia.org/wiki/Eulerian_path), _LCA problem can be reduced to range minimum problem_ through the following process:
+
+<img src="{{ '/styles/images/binaryTree/lca_rangeMin.jpg' }}" width="100%" />
+
+__New Problem:__ Can we construct a cartesian tree out of a sequence input and find LCA efficiently?  
+
+__Linear Time Construction of Cartesian Tree:__
+
+Scan through the sequence and build it from left to right (init root using the first number):  
+
+<img src="{{ '/styles/images/cartesianTree/construct_cartesianTree.jpg' }}" width="100%" />
+
+``` python
+""" Example Input: A = [20, 12, 5, 17, 13] """
+
+A = [new Node(A[i]) for i in range(len(A))]
+root = A[0]
+for i in range(1, len(A)):
+  if A[i].val < root.val:
+    A[i].left = root
+    root = A[i]
+  if A[i] > A[i-1]:
+    A[i-1].right = A[i]
+  if A[i] < A[i-1]:
+    A[i-1].parent.right = A[i]
+    A[i].left = A[i-1]
+```
+
+__LCA query:__
+
+As I mentioned in the above "Problem Reduction" section, LCA can be reduced to range minima problem. Although it defeats the purpose, it provides us with the first __naive solution:__ build a 2D array of each pair of numbers, taking O(n^2) space but answering queries in O(1). We will revisit range minima problem as follows and come up with a solution taking O(n) time to preprocess, O(nlogn) space and O(1) to answer query.  
+
+#### Revisit Range Minima Problem
+
+__Idea behind__ Every range can be decomposed of a constant number of smaller, maybe overlapping, sub ranges. The minima to a query will be the minima of all these sub ranges. Can we use some additional space to store the minima of sub ranges at different "granularity" so that queries can be answered in constant time?  
+
+__Dynamically generate minima table:__  
+
+Example Input: A[n]  
+
+Preprocess:  
+``` Python
+""" Let T[i, k] = min(A[i], A[i+1], ..., A[i + 2**k - 1]) """
+
+for k in range(0, floor(math.log(n))):
+  for i in range(0, n - 2**k ):
+    if k == 0:
+      T[i, k] = A[i]
+    else:
+      T[i, k] = min(T[i, k-1], T[i + 2 ** (k-1), k-1])
+      # think about the above line of code
+      # think about how we define T[i, k]
+      # think about DP
+```
+
+Query:  
+``` Python
+def query(i, j):
+  k = floor(math.log(j - i + 1))
+  return min(T[i, k], T[j - 2**k + 1, k])
+```
+
+<img src="{{ '/styles/images/rangeMinQuery/subRangeMinQuery.jpg' }}" width="100%" />
+
+__Generalization:__
+Micro/Macro Structure Strategy, storing constant-amount of additional info for each block and provide O(n) space O(1) time solution.  
+
+<img src="{{ '/styles/images/rangeMinQuery/microMacro1.jpg' }}" width="80%" />
+
+<img src="{{ '/styles/images/rangeMinQuery/microMacro2.jpg' }}" width="100%" />
+
 
 <!--
 buffer

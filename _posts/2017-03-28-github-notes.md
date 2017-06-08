@@ -239,6 +239,10 @@ Rename local branch
 > git checkout [target_branch]
 > git branch -m [new_branch_name]
 
+Delete local/remote branch
+> git branch -d <local_branch>
+> git push origin --delete <remote_branch>
+
 
 # Git Workflow
 
