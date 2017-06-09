@@ -264,6 +264,60 @@ Micro/Macro Structure Strategy, storing constant-amount of additional info for e
 <img src="{{ '/styles/images/rangeMinQuery/microMacro2.jpg' }}" width="100%" />
 
 
+### Persistence - Version control for Data Structure
+
+__Persistence:__ (think of git)
+1. partial persistence - old versions are read-only
+2. full persistence - old versions can be updated.
+3. confluent persistence - combine different parts from multiple versions
+
+__Classic example:__ [stack](https://zangshayang1.github.io/study-notes/2017/04/03/stack/)  
+1. Persistent if implemented in an object-oriented way.
+2. Non-persistent if implemented with Array.  
+
+#### Convert Non-persistent to Persistent
+
+__Fat-node technique converts everything to partial persistent:__
+[wiki ref](https://zangshayang1.github.io/study-notes/2017/04/03/stack/)  
+1. Versions are represented by a global counter
+2. Each variable is represented by a collection of tuples like (version_stamp, value)
+3. Each collection is represented as a BST ordered by version stamp so that accessing takes O(logn) with n being the number of versions.
+4. Space: O(number of changes) Time: O(Non-persistent version query time * logn)
+5. Using flat tree to replace BST can improve query performance.
+
+__Path Copy Technique:__
+[wiki ref](https://en.wikipedia.org/wiki/Persistent_data_structure#Complexity_of_path_copying)  
+1. Works only for trees with parent to children pointers, such as WAVL.  
+2. Create only new nodes along the paths from root node to target nodes where updates occur, and pointers to old unchanged parts.
+3. The number of nodes will be the same as the number of versions that have been created. They are stored in an array, with version stamp.
+4. Space O(number of versions)
+
+<img src="{{ '/styles/images/pathCopy/pathCopy.jpg' }}" width="100%" />
+
+### Union-find Data Structure
+
+__Classic example of usage - finding the minimum spanning tree using Kruskal's Algorithm.__  
+
+With union-find data structure, we can:  
+1. test which group this input node belongs to - find(x)
+2. union two groups of nodes - union(A, B)
+
+Two improvements to make the data structure efficient:  
+1. Represent a group in the form of a tree, augmented with a size field (indicating the size of the subtree rooted at the current node) and make the smaller one be one of the children of the bigger one during union(A, B). _This ensures that the depth of the tree A coming out of union(A, B) will grow only logarithmically rather than linearly._
+2. Every find(x) operation will splay node x to be one of the direct children of the root.
+
+__Implementation Details:__
+Refer to [Kruskal's Algorithm](https://zangshayang1.github.io/study-notes/2017/02/08/greedy-algorithm/#minimum-spanning-tree---prims-algorithm-and-kruskals-algorithm).
+
+__Time Bound:__  
+
+Perform M find()/union() operations on an union-find data structure of the above implementation storing N elements, gives the following time complexity (nearly constant):  
+
+$$ O(min\;i\;| A(i, \lfloor \frac{M}{N} \rfloor)) $$
+
+Where A is [Ackermann function](https://en.wikipedia.org/wiki/Ackermann_function).  
+
+
 <!--
 buffer
 buffer
