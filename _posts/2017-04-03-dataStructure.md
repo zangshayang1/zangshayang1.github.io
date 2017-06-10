@@ -263,6 +263,53 @@ Micro/Macro Structure Strategy, storing constant-amount of additional info for e
 
 <img src="{{ '/styles/images/rangeMinQuery/microMacro2.jpg' }}" width="100%" />
 
+### Van Emde Boas tree
+
+__Problem Intro:__ In an integer searching problem, use balanced BST gives O(logn) performance, but [Van Emde Boas tree](https://en.wikipedia.org/wiki/Van_Emde_Boas_tree) gives O(log(logn)) performance, which is exponentially better than BST. Van Emde Boas tree can be used to accelerate integer ONLY searching problem because it exploits the fact that it always takes one machine  word of size W to store one W-bit integer and thus we can perform bit manipulation on integers really fast.  
+
+__Bit Manipulation Involved:__
+1. get the upper half bits on a W-bit integer x: x >> W/2
+2. get the lower half bits on a W-bit integer x: x & ((1 << W/2) - 1)
+
+__Idea:__ Form a hierarchical storage of the input, ordered by the numerical value of upper half bits. So in the case of an input set of size S, there will be at most $$ \sqrt{S} $$ categories, each contains at most $$ \sqrt{S} $$ elements, which will be categorized into $$ \sqrt[{4}]{S} $$ categories recursively.
+
+__Visualize:__
+
+<img src="{{ '/styles/images/flatTree/flatTree.jpg' }}" width="100%" />
+
+__Algorithm to find predecessor:__  
+
+```
+# example input: 1, 2, 3, 4, 5 -> constructing a Van Emde Boas tree T.
+# example output: 2 = predecessorOf(3, T)
+
+def predecessorOf(x, T):
+  if max < x: return max
+
+  uh = upperHalf(x)
+
+  if uh in hashTable:
+    t = hashTable[uh]
+    # ---------- 1
+    if t.min < lowerHalf(x):
+      return predecessorOf(lowerHalf(x), t) + up
+
+    # if the above doesn't return, do the following
+    # ---------- 2
+    # if uh in hashTable, ur must be in the upperTable as well
+    t = upperTable[uh]
+      if predecessorOf(lowerHalf(x), t) is found:
+        return t.max
+
+    # if 1 and 2 don't work out
+    # ---------- 3
+    elif min < q: return min
+
+  else:
+    return NOT FOUND (some extreme value will do)
+```
+
+
 
 ### Persistence - Version control for Data Structure
 
@@ -313,9 +360,10 @@ __Time Bound:__
 
 Perform M find()/union() operations on an union-find data structure of the above implementation storing N elements, gives the following time complexity (nearly constant):  
 
-$$ O(min\;i\;| A(i, \lfloor \frac{M}{N} \rfloor)) $$
+$$ O(min\;i\;|\;A(i, \lfloor \frac{M}{N} \rfloor) > N ) $$
 
 Where A is [Ackermann function](https://en.wikipedia.org/wiki/Ackermann_function).  
+
 
 
 <!--
