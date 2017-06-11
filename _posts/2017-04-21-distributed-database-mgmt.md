@@ -269,7 +269,7 @@ __Timestamp Ordering Protocol (MVCC timestamp ordering):__
 * The "write" part is also known as [Thomas's Rule](https://en.wikipedia.org/wiki/Thomas_write_rule)
 
 __Proof of Correctness:__
-_Assume 2PL scheduling produced such a schedule that, if we construct a serialize graph (SG) for it, it will have a cycle._
+_Assume Timestamp Ordering Protocol produced such a schedule that, if we construct a serialize graph (SG) for it, it will have a cycle._
 _Let's say, T1, T2, ..., Tn formed such a cycle. According to Timestamp Ordering, TS(1) < TS(2) < ... < TS(n) < TS(1)._ -> __Contradiction__
 
 ---
