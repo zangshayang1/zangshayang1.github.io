@@ -231,7 +231,7 @@ def predecessorOf(x, T):
         return t.max
 
   # if uh not found in the hashTable
-  elif min < q:
+  elif min < x:
     return min
 
   else:
