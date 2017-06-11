@@ -28,13 +28,13 @@ __RECOMMEND:__ [Fundamental Data Structure](https://en.wikipedia.org/wiki/Book:F
 
 [B tree](https://zangshayang1.github.io/study-notes/2017/05/16/B-tree/) Last update: 20170515  
 
-[Suffix Tree & Tries] Last update: 20170520  
+[Suffix Tree & Tries](https://zangshayang1.github.io/study-notes/2017/05/20/tries/) Last update: 20170520  
 
+[Range Minima Problem - Cartesian Tree - LCA - Van Emde Boas Tree](https://zangshayang1.github.io/study-notes/2017/05/27/range-min-query/) Last Update: 20170527  
 
-[Range Minima Problem - Cartesian Tree - LCA - Van Emde Boas Tree] Last Update: 20170527
+[Data Structure Persistence](https://zangshayang1.github.io/study-notes/2017/06/03/persistent-data-structure/) Last Update: 20170603  
 
-[Data Structure Persistence] Last Update: 20170603  
-
+[Union-Find](https://zangshayang1.github.io/study-notes/2017/06/10/union-find-dataStructure/) Last Update: 20170610  
 
 
 <!--
