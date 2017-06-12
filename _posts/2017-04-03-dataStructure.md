@@ -26,7 +26,7 @@ __RECOMMEND:__ [Fundamental Data Structure](https://en.wikipedia.org/wiki/Book:F
 
 [Binary Search Tree](https://zangshayang1.github.io/study-notes/2017/05/06/binary-tree/) Last update: 20170515  
 
-[B tree](https://zangshayang1.github.io/study-notes/2017/05/16/B-tree/) Last update: 20170515  
+[B tree](https://zangshayang1.github.io/study-notes/2017/05/15/B-tree/) Last update: 20170515  
 
 [Suffix Tree & Tries](https://zangshayang1.github.io/study-notes/2017/05/20/tries/) Last update: 20170520  
 
