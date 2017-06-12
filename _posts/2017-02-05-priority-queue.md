@@ -22,7 +22,7 @@ Last update: 20170504
 * find and pop min/max - element with highest priority
 * change elements' priority and keep the queue updated
 
-__Classic Use Case:__ [Dijkstra's Algorithm](https://zangshayang1.github.io/study-notes/2017/02/09/greedy-algorithm/#greedy-algorithm-to-solve-graph-problems) where, in a G = (V, E), abs(V) times of "find and pop" operation is performed and abs(E) times "change and update" operation is performed. Because abs(E) >> abs(V) and the following binary heap implementation provides very slow "change and update" operation, the following provides a tailored implementation and an alternative algorithm to do the same thing.  
+__Classic Use Case:__ [Dijkstra's Algorithm](https://zangshayang1.github.io/study-notes/2017/02/08/greedy-algorithm/#greedy-algorithm-to-solve-graph-problems) where, in a G = (V, E), abs(V) times of "find and pop" operation is performed and abs(E) times "change and update" operation is performed. Because abs(E) >> abs(V) and the following binary heap implementation provides very slow "change and update" operation, the following provides a tailored implementation and an alternative algorithm to do the same thing.  
 
 ``` python
 class PriorityQueue():
@@ -42,7 +42,7 @@ class PriorityQueue():
       if element.priority >= minEle.priority:
         continue
       minEle.item = element.item
-      minEle.priority = element0.priority
+      minEle.priority = element.priority
       minKey = key
     del self.pq[key]
     return minEle
@@ -218,8 +218,9 @@ class MinHeap(object):
 ### K-ary Heap
 
 If we __rethink about the Dijkstra's__ Algorithm in G(V, E):  
-1. abs(V) times minPop() required. Can we improve this? Not really, since sorting itself cannot beat O(nlogn).
-2. abs(E) times siftDown() required(priority-decrease). Can we improve this?
+1. abs(V) times minPop() required. Can we improve this? Not really, since sorting itself cannot beat O(nlogn). Each siftDown() operation after minPop() is necessary and it takes O(logn).  
+2. abs(E) times siftUp() is required(priority-decrease).
+3. Can we improve the average cost of siftDown()?
 
 __Answer is Yes:__ We have seen that the average cost of siftDown is lower than siftUp in binary heap __thanks to its 1-parent-2-children structure__. Can we further lower the average cost of siftDown by expanding it to [K-ary Heap](https://en.wikipedia.org/wiki/D-ary_heap)? Yes, but it also increase the cost of single siftDown operation as shown below.
 
@@ -231,7 +232,7 @@ In this case, Dijkstra takes:
 
 $$ O(V \cdot k\log_{k}{V} + E \cdot \log_{k}{V}) $$.
 
-The optimal can be achieve when we strike a balance between these two terms, namely:  
+The optimal can be achieved when we strike a balance between these two terms, namely:  
 
 $$ k = {\frac{E}{V}} $$
 
