@@ -22,9 +22,9 @@ __RECOMMEND:__ [Fundamental Data Structure](https://en.wikipedia.org/wiki/Book:F
 
 [KthMajorityVote - Counting BloomFiter - CMS - MinHash](https://zangshayang1.github.io/study-notes/2017/04/24/streamingDataStructure/) Last update: 20170419  
 
-[Priority Queue](https://zangshayang1.github.io/study-notes/2017/02/06/priority-queue) Last update: 20170502  
+[Priority Queue](https://zangshayang1.github.io/study-notes/2017/02/05/priority-queue/) Last update: 20170502  
 
-[Binary Search Tree](https://zangshayang1.github.io/study-notes/2017/05/07/binary-tree/) Last update: 20170515  
+[Binary Search Tree](https://zangshayang1.github.io/study-notes/2017/05/06/binary-tree/) Last update: 20170515  
 
 [B tree](https://zangshayang1.github.io/study-notes/2017/05/16/B-tree/) Last update: 20170515  
 
