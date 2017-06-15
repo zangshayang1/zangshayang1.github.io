@@ -437,6 +437,236 @@ while (current_node is not leaf)
 
 __Pi-tree Significant Improvement:__ # TODO
 
+# Database Recovery
+
+#### Database Failure
+
+1. System Failure
+2. Message Failure
+3. Media Failure
+4. Natural Disaster
+
+#### Logging Strategies
+
+__3 Logging Strategies__
+1. Physical logging: store before/after image of objects
+2. Logical logging: store operation function and parameters
+3. Physiological logging: store operations on a page basis
+
+__Why logical logging is optimal?__
+1. Log data volume is 10-1000 times smaller than physical logging.
+2. Logical logging allows higher concurrency.
+
+__Why logical logging only requires less restrictive locking condition?__
+1. Physical logging requires page level locking (more restrictive) or record level locking if all records are in the same size.
+* Otherwise, for example: transaction t1 updated a record r1 and reduced its size, then transaction t2 came in and updated on the space that used to be taken by r1. A rollback of t1 now would cause data inconsistency.
+2. Physiological logging requires record level locking if all records don't migrate to other pages.
+* Otherwise, for example: transaction t1 inserted a record r7 in page p3, and then transaction t2 inserted a record r8, which filled up the page and caused migration of r7 and r8 to some other page. A rollback of t1 now would fail because r7 can no longer be found in page p3.
+
+__Problems with logical logging - Partial Failure__
+In a transaction including 3 operations, o1, o2, o3. If one of them failed after the transaction commits, how to apply logical Undo of the whole transaction?
+
+__Solutions to partial failure__
+1. Shadow paging: use a shadow copy of pages to keep track of updates. To undo, if the transaction is fully represented on the page, use logical undo. Otherwise, simply restore page states to the original.
+2. Multi-level strategy: use physical/physiological logging for partial undo; use logical undo for complete undo.
+
+
+__Solutions to the same problem with physiological logging__
+1. FIX: Cover all page been READ or WRITE using semaphore and avoid partially modified pages being flushed to disk.
+2. WAL: From a high level, log records are being written before a transaction commits. In Aries, steal policy is used, which indicates that pages could be flushed to disk even before the transaction commits. So the WAL here requires that: force logs to disk up to the pageLSN (the most recent update performed on this page) of the current page to be flushed before the page can be flushed.
+3. FL@C: Of course, force logs up to the commit record to disk before a transaction can commit.
+
+__Why need pageLSN?__
+We don't want to blindly REDO the updates that have been to disk or UNDO those that didn't even reach to disk.
+
+__In Rollback__ CLRs will be generated and force to disk before an abort commits. Affected pages will be flushed with its pageLSN modified to be the lsn of the most recent CLR.
+
+#### Checkpointing
+1. Sharp checkpointing
+2. Fuzzy checkpointing (refer to checkpoint in  Aries Recovery Algorithm below.)
+
+#### Recovery Optimization
+1. Frequent checkpointing
+2. Exploit parallelism
+3. Long transactions make UNDO go all the way back to very early logs. We could abort such transactions or put side-logs for them.
+
+## Aries Recovery Algorithm
+
+#### Data Structure
+
+```
+// update log
+LR(LSN, type = "update", TxID, prevLSN, pageID, redoInfo, undoInfo)
+
+// compensate log record
+CLR(LSN, type = "compensate", TxID, prevLSN, pageID, redoTheUndoInfo, nextUndoLSN)
+
+// transaction table - keep track of ongoing transactions
+tt = {TxID: {
+              lastLSN: lsn of last log record written in this transaction,
+              nextUndoLSN: lsn of next log record to be process in a rollback
+              }
+      ...
+      }
+
+// dirty page table - cache all the updates that haven't been flushed to disk
+dpt = {pageID: recLSN}
+```
+
+#### Normal Process
+
+1. Periodically fuzzy checkpointing.
+
+2. Update transaction table.
+* Add/remove entries as new transactions begin and old transactions committed.
+
+3. Update page dirty table.
+* Add/remove entries as new operations involve new pages and old pages flushed. (recLSN is the earliest LSN among unflushed updates on that page. When the page is flushed, recLSN became the pageLSN store as the page's metadata.)
+
+4. Other policy:
+* steal: uncommitted updates can be flushed to disk (taken out from dirty page table.)
+* no-force: updates need NOT be forced to disk before commit (dirty page keeps those updates.)
+
+5. Dirty page is written out in a continuous manner.
+
+6. Normal rollback of a transaction starts from its last log record and following the prevLSN pointer. If the previous log is a CLR, following its nextUndoLSN. Terminates at saveLSN(savepoint for partial rollback) or transaction_begin_log.
+
+
+
+#### Fuzzy checkpointing
+1. Write a check_point_start log record along with dirty page tables and transaction tables
+2. Obtain latch on the dirty buffer blocks and flush page to disk.
+3. Write check_point_end log record
+4. Flush log records up to check_point_end.
+5. Store a last_checkpoint pointer to the check_point_start record in master record.
+
+
+### Recovery Algorithm Description
+
+__3 Passes (upon system restarts itself):__
+1. Analysis Pass
+2. Redo Pass
+3. Undo Pass followed by starting a new checkpointing
+
+#### Analysis Pass
+
+__Load checkpoint__
+Recover transaction table and dirty page table from the last checkpoint found in _master record_.  
+
+__Find start point__
+Scan backward till the earliest transaction_start_log of all the transactions in transaction table is found. (A series of log records that belong to one transaction might span the start_checkpoint_log that comes with checkpoint file.)
+
+__Recover memory state__
+Scan forward from the transaction_start_log found above:
+1. update transaction table
+* add an entry if a transaction ID is not found in current transaction table
+* remove the entry if the transaction's commit log is read.
+* modify fields such as lastLSN and nextUndoLSN as more log records of a transaction has been read.
+2. update dirty page table
+* add an entry if a page ID is not found in current dirty page table and associate it with the lsn of the current log being read as recLSN.
+
+__Result__
+When this pass ends, you have:
+1. all the transactions to be undone listed in transaction table.
+2. recovered dirty page table to the state right before crash.
+3. redoLSN = min(all the recLSN in the dirty page table), indicating where the second phase starts. (Use start_checkpoint_lsn instead if there is no recLSN record in the dirty page table.)
+
+#### Redo Pass
+
+Scan forward from redoLSN (one of the results out of Analysis Pass):
+1. If the current log record being read is trying to modifying a page, whose ID is not found in dirty page table, go for next log. (because it means the page was flushed sometime after the update was logged)
+2. If the current log record being read has a LSN smaller than recLSN associated with the corresponding page in the dirty table, go for the next log. (same reason as above)
+3. Otherwise, fetch the page from disk (the pageLSN must be smaller than the current LSN), redo it.
+
+#### Undo Pass
+
+Scan backward the logs and rollback the those updates which belongs to "loser transactions" in transaction table.  
+
+Create CLRs with nextUndoLSN pointing to the previous log of the log currently being undone. (To avoid repeated undos when system crashes during recovery, nextUndoLSN pointer helps to skip over those undos that have been done.)  
+
+Ignore CLRs along the way.
+
+## Distributed DBMS
+
+__Atomic Commit Protocol ensures atomic transaction commit/abort/rollback in distributed DBMS.__  
+
+### Two Phase Commit Protocol - 2PC
+
+#### Terms
+1. Resource Manager (RM) refers to database.
+2. Coordinator refers to the component that runs 2PC on behalf of a transaction.
+3. Participant refers to RM at different sites.
+4. Protocol Database is what a coordinator maintains in its memory for each transaction.
+* enable coordinator to execute 2PC
+* respond to participants' queries about transaction status
+* delete entry of a transaction when all participants reply done.
+
+#### 2PC Normal Actions - PrN
+1. Coordinator became aware of a transaction, put an entry of transaction in Protocol Database and mark it as __initialized__.
+2. Coordinator put up a list of participants involved and store in Protocol Database. Change the entry status as __prepared__.
+3. Coordinator broadcasted a __prepare request__ to participants.
+4. Participant first flushed a __prepare log record__ to disk and then replied a __prepared__ message to coordinator.
+5. When coordinator collected prepared messages from all participants, it recorded participants' status as prepared and changed the entry status to __commit__.
+6. Coordinator first flushed a __commit log record__ to disk and then broadcasted __commit__ messages to all participants.
+7. When participant received commit message from the coordinator, participant worked on the transaction.
+8. Upon the completion, participant first write (not immediately forced) a __complete log record__ and then sent back a __ACK__ message to the coordinator.
+9. Coordinator updated each participant's status in Protocol Database as ACK is received. After all participants have ACKed, coordinator first write (not immediately forced) a __complete log record__ and then delete the entry from Protocol Database.
+
+#### PrN, PrA, PrC
+
+__Presumed Normal__  
+In PrN, if coordinator sends out __abort__ message to participants, participants will reply __ACK__ and both sides will write __complete log record.__  
+
+__Presumed Abort__  
+In PrA, after coordinator sends out __abort__ message to participants, no more messages or logs required, the transaction entry will be removed immediately from Protocol Database. In case some participant failed during this process, when it asked the coordinator for transaction status, the coordinator will not find it in Protocol Database and thus return __abort__ to the participant.
+
+__Presumed Commit__
+In PrC, when a participant asked the coordinator for transaction status and there's no entry of this transaction in Protocol Database, it presumes the transaction has committed. It'd be wrong if the transaction was actually aborted. How to make them distinguishable to the participant? The coordinator will force a __prepare log record__ before it even sends __prepare request__ to participants.
+
+* __Note:__ read only transaction will respond "prepared-read-only" to "prepare request" from coordinator. Upon receiving this message, coordinator will not send further decision message to this participant. In this case, PrA will produce 1 forced prepare log on participant's side, but PrC will produce 1 forced prepare log on each side, thus not efficient.
+
+#### Timeout Actions and Failure Scenarios
+If a participant failed @ 6, coordinator cannot hear __prepared__ message back from the participant within certain amount of time, coordinator broadcasts __Abort__ and removes the transaction from Protocol Database.  
+
+If the coordinator failed @ 6, participant cannot hear __commit/abort__ back from coordinator within certain amount of time, the transaction will be forwarded to __recovery process__, which would periodically execute __status-transaction call__ to the coordinator till it recovers and do the following:  
+
+1. _If coordinator cannot find a commit log, broadcast ABORT (Presumed Abort Protocol)._
+2. _If coordinator found a commit log but miss complete log, there are 3 possibilities listed as follow, recovery process will check which participants are still waiting, reconstruct Protocol Database in memory and send out COMMIT message to participants accordingly. So that coordinator can resume from 9 and complete the transaction._
+* _it crashed before any commit msg sent out;_
+* _it crashed after all commit msg sent;_
+* _anywhere between 1 and 2._
+3. _If coordinator found both commit log and complete log, do nothing._
+
+* __Note:__ When coordinator failed, participant cannot unilaterally decide to abort the transaction. Instead it will wait and this causes 2PC blocking problem.
+
+If a participant failed @ 8, coordinator cannot hear __ACK__ back from the participant within certain amount of time, the transaction will be forwarded to __recovery process__, which would periodically send __Commit__  message to the participant till it recovers and resend __ACK__ to the coordinator.  
+
+_If a participant failed any other time, it will go through REDO-UNDO recovery and check if it has a prepared log. If there is no prepared log, do nothing because whatever previous transaction must have aborted with "my consent". If there is a prepared log, do the following:_  
+1. _If there is a complete log as well, do nothing._
+2. _If there is no complete log, check transaction_status with the coordinator:_
+* _if the transaction is not an entry in Protocol Database, it returns a ABORT msg._
+* _if the transaction status is COMMITTED, it returns a COMMIT msg._
+* _if the transaction is in Protocol Database but not yet committed, it returns a WAIT msg because other partcipants haven't replied PREPARED._
+
+#### 2PC Blocking Problem and 3PC
+
+__What is blocking problem?__
+The fundamental problem with 2PC is when coordinator broadcasts COMMIT/ABORT message to participants, each participant will go ahead working on the transaction without letting a third party know its status. If one participant and the coordinator crashed during the process, other participants can neither commit their parts because the crashed one might have aborted, nor can they abort their parts because the crashed one might have committed. As a result, they have to hold all the locks and wait.
+
+__Can we reduce blocking?__
+Cooperative Termination Protocol: If a participant times out and wait for decision to come, it will check with other participants to see if any of them received __commit or abort__ message. If all of them are __uncertain__, the blocking continues.  
+
+__3PC__
+Three phase commit protocol has an additional phase between "prepare phase" and "commit phase". That is "precommit phase". When coordinator crashed, recovery process will ask each running participant for their status. If any one is not reaching "precommit phase", abort the transaction. If any one is in "commit phase", commit the transaction.
+
+
+## Questions
+
+1. When checkpoint starts, what goes to disk? dirty page table or dirty pages? Was any update permitted on them?
+
+2. In redo pass, if the current log record being read has a LSN >= recLSN associated with the corresponding page in the dirty table, would it be possible that the page fetch from disk has a pageLSN bigger than current LSN?
+
+3. How to distinguish commit and abort in PrC?
 
 <!--
 buffer
