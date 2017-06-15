@@ -437,6 +437,22 @@ while (current_node is not leaf)
 
 __Pi-tree Significant Improvement:__ # TODO
 
+## Phantom Problem -> Predicate Locking -> Multi-level Granular Locking -> Intention Mode Locking on Granule Graph -> Dynamic Range Locking
+
+Transaction can place a IS/S lock at a granule only if at least one of its parents is locked in either IS/SIX/IX mode.  
+
+Transaction can place a IX/SIX/X lock at a granule only if all of its parents are locked in either IX/SIX mode.
+
+Dynamic Range Locking - insert protocol
+1. IX on the range
+2. X on the inserted
+3. IX on the newly created range - protect it from phantom read - what about further insertion and deletion? Is IX enough to protect it?
+
+Dynamic Range Locking - delete protocol
+1. IX on the range
+2. X on the deleted - the lock will disappear as the record is deleted
+3. SIX on the merged range - protect it from further read or insert or delete
+
 # Database Recovery
 
 #### Database Failure
@@ -621,7 +637,7 @@ __Presumed Abort__
 In PrA, after coordinator sends out __abort__ message to participants, no more messages or logs required, the transaction entry will be removed immediately from Protocol Database. In case some participant failed during this process, when it asked the coordinator for transaction status, the coordinator will not find it in Protocol Database and thus return __abort__ to the participant.
 
 __Presumed Commit__
-In PrC, when a participant asked the coordinator for transaction status and there's no entry of this transaction in Protocol Database, it presumes the transaction has committed. It'd be wrong if the transaction was actually aborted. How to make them distinguishable to the participant? The coordinator will force a __prepare log record__ before it even sends __prepare request__ to participants.
+In PrC, when a participant asked the coordinator for transaction status and there's no entry of this transaction in Protocol Database, it presumes the transaction has committed. It'd be wrong if the transaction was actually aborted. How to make them distinguishable to the participant? The coordinator will force a __prepare log record__ before it even sends __prepare request__ to participants. In this case, if a participant recovers from a failure and sees the prepared log in coordinator, it will further check Protocol Database for the corresponding transaction, if there's an entry, resume from there, otherwise, commit.
 
 * __Note:__ read only transaction will respond "prepared-read-only" to "prepare request" from coordinator. Upon receiving this message, coordinator will not send further decision message to this participant. In this case, PrA will produce 1 forced prepare log on participant's side, but PrC will produce 1 forced prepare log on each side, thus not efficient.
 
@@ -659,14 +675,6 @@ Cooperative Termination Protocol: If a participant times out and wait for decisi
 __3PC__
 Three phase commit protocol has an additional phase between "prepare phase" and "commit phase". That is "precommit phase". When coordinator crashed, recovery process will ask each running participant for their status. If any one is not reaching "precommit phase", abort the transaction. If any one is in "commit phase", commit the transaction.
 
-
-## Questions
-
-1. When checkpoint starts, what goes to disk? dirty page table or dirty pages? Was any update permitted on them?
-
-2. In redo pass, if the current log record being read has a LSN >= recLSN associated with the corresponding page in the dirty table, would it be possible that the page fetch from disk has a pageLSN bigger than current LSN?
-
-3. How to distinguish commit and abort in PrC?
 
 <!--
 buffer
