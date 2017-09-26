@@ -9,8 +9,7 @@ tag: github
 {:toc}
 
 
-
-Last Modified: 20170517
+Last Modified: 20170926
 
 
 Recommended Tutorials:
@@ -44,6 +43,8 @@ Put "index.html" on __stage__ to keep track of it
 
 If you realized there's something else you'd like to add to "index.html", you can __unstage__ it by:  
 ```shell
+> git reset -- index.html
+# or you can use the following
 > git reset @ index.html
 # "@" denotes "HEAD" pointer in old git versions.
 ```
