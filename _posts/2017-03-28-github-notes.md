@@ -205,8 +205,44 @@ then push to server.
 > git push origin master
 ```
 ---
+### Compare
+
+diff local files between different branches:  
+``` shell
+git diff master:somedir branch:somedir
+```
+
+diff local branch and remote branch:  
+``` shell
+git diff master origin/master
+```
+
+diff local files with those on the remote:  
+``` shell
+git diff origin/branch -- [file paths]
+```
+
+diff between different commits:  
+``` shell
+git diff targetCommitHash^ targetCommitHash
+```
 
 ### Other Notes
+
+Regret making dubious commits on master branch:  
+``` shell
+git add dubious.py
+git commit -m "this is the commit that I am about to regret making."
+git checkout -b keep_dubious_on_this_branch
+git checkout master
+git reset --hard <SHA1sum of the latest undubous commit>
+```
+
+Diverge push terminal to some other remote
+``` shell
+git remote set-url origin git@github.corp.ebay.com:apdrm/<project>.git
+git remote set-url --push origin git@github.corp.ebay.com:APD/<project>.git
+```
 
 Untrack files from git (should never track runtime files from the beginning):
 ``` shell
