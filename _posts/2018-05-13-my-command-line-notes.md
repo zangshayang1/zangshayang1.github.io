@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  CommandLine Notes
-date:   2016-08-27 01:08:00 +0800
+date:   2018-05-13 01:08:00 +0800
 categories: reference
 tag: CommandLine
 ---
@@ -11,10 +11,12 @@ tag: CommandLine
 
 
 
+Last Update: 2018-05-13
+
 ## Maven
 ```shell
 # Forces a check for missing releases and updated snapshots on remote repositories
-> mvn clean install -U 
+> mvn clean install -U
 
 # Package using spark20 mvn build profile
 > mvn package -P spark20
@@ -46,11 +48,11 @@ jar -tf xxxx.jar | grep [udf_mainClass]
 > spark-submit --class className -Xms256m -Xmx1g some.jar arg0 arg1 ..
 
 # Run java using java -jar VS using java -cp
-> java -cp target/xxxx.jar mainClass [options] 
+> java -cp target/xxxx.jar mainClass [options]
 > java -jar target/xxxx.jar [option]
 # NOTES: xxxx.jar file is an archived collection of all the *.class required to run the program, which you can unzip and find mainEntry class file, library class files and all the metadata.
 # NOTES: using -cp simply tells JVM to load all the class files at that location and start the program from given 'mainClass'.
-# NOTES: using -jar invokes looking for library class file locations and 'mainClass' configured in META-INF/MANIFEST.MF. 
+# NOTES: using -jar invokes looking for library class file locations and 'mainClass' configured in META-INF/MANIFEST.MF.
 
 ```
 
@@ -65,27 +67,27 @@ jar -tf xxxx.jar | grep [udf_mainClass]
 ```
 
 
-## Vim 
+## Vim
 1. hjkl navigation  
-  
+
 2. web navigation  
-  
+
 3. under navigation mode, 30i-Esc creates 30 continuous '-'.  
-  
+
 4. beginning of the line: 0; end of the line: $.  
-  
+
 5. beginning of the file: gg; end of the file: G; x line of the file: xG.  
-  
+
 6. search for pattern: /pattern, with n points to the next  occurrence and N points to the previous one.  
-  
+
 7. start a newline below cursor: o; start a newline above cursor: O.  
-  
+
 8. delete the line: dd; delete the word forward: de; delete the word backward: db.  
-  
+
 9. repeat the previous command: .  
-  
+
 10. undo: u.  
-  
+
 11. place your cursor and try the following in navigation mode: v e d p => visual mode, select, delete(also copy), paste.  
 
 
@@ -100,7 +102,7 @@ jar -tf xxxx.jar | grep [udf_mainClass]
 # see what is going on on this port
 > ps -ef | grep 7600
 
-# map domain name [myaws.io] to IP locally 
+# map domain name [myaws.io] to IP locally
 > sudo vim /etc/hosts # aa.bbb.ccc.ddd myaws.io
 ```
 
@@ -110,7 +112,7 @@ jar -tf xxxx.jar | grep [udf_mainClass]
 # manage third-party softwares installed via homebrew by:
 > brew services list/start/stop...
 
-# alias ll 
+# alias ll
 > alias ll="ls -lhG"
 
 # list at reverse order of last modified time
@@ -118,7 +120,7 @@ jar -tf xxxx.jar | grep [udf_mainClass]
 ```
 
 
-### Search 
+### Search
 ```shell
 # do a 5-depth search from root dir / and list files whose names contain "master"
 > find / -maxdepth 5 -name "*master*"
@@ -138,7 +140,7 @@ jar -tf xxxx.jar | grep [udf_mainClass]
 ```
 
 
-## SSH 
+## SSH
 ```shell
 # keep remote login alive
 > ssh -o ServerAliveInterval=60 [host]

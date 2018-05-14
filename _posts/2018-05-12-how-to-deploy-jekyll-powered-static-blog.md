@@ -1,13 +1,18 @@
 ---
 layout: post
 title:  How To Deploy Jekyll Powered Static Blog
-date:   2016-08-27 01:08:00 +0800
+date:   2018-05-14 01:08:00 +0800
 categories: How-To
 tag: Jekyll
 ---
 
 * content
 {:toc}
+
+
+
+Last Update: 2018-05-14
+
 
 ## What is Jekyll, Gem, Bundler?
 Jekyll itself is a ruby library. Gem is a ruby library manager. Bundler is a ruby project manager (It ensures the consistency of the project's dependencies across different working environment). Rvm is ruby version manager.
@@ -18,7 +23,7 @@ Jekyll itself is a ruby library. Gem is a ruby library manager. Bundler is a rub
 # Install Bundler
 > gem install bundler
 # Initialize a vanilla ruby project starting point under the currrent dir, which comes with a vanilla Gemfile where all the dependecies are listed such as Jekyll
-> bundler init 
+> bundler init
 # Install all the dependecies through Bundler, such as Jekyll
 > bundler install
 # Initialize a Jekyll project template
@@ -33,4 +38,4 @@ Jekyll itself is a ruby library. Gem is a ruby library manager. Bundler is a rub
 
 # Don't forget to open tcp port 4000 on secruity group if you are using ec2
 
-``` 
+```
