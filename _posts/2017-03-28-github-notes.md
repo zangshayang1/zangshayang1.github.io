@@ -9,16 +9,15 @@ tag: github
 {:toc}
 
 
-Last Modified: 20170926
+Last Modified: 20180513
 
 
 Recommended Tutorials:
 1. https://www.atlassian.com/git/tutorials
 2. https://git-scm.com/book/en/v2
 
-# Git Local
 
-### Basics
+## Basics
 
 Initialize git repo locally  
 ```shell
@@ -65,47 +64,41 @@ Check commit history
 > git log --graph --all --decorate
 ```
 
-### Undo
+## Undo
 
-If you made some change to index.html and committed again, it caused some bug. Then you regretted those changes and you want to withdraw the commit.
 ```shell
-> git reset @~1
+# Regret making dubious commits on master branch:  
+git add dubious.py
+git commit -m "this is the commit that I am about to regret making."
+git checkout -b keep_dubious_on_this_branch
+git checkout master
+git reset --hard <SHA1sum of the latest undubous commit>
+
+# If you made some change to index.html and committed again, it caused some bug. Then you regretted those changes and you want to withdraw the commit.
 # "~1" means 1 step backward.
 # You could withdraw the last 2 commits if you like.
-```
+> git reset @~1
+# Note: Now the commit is withdrawn and the file became "modified and unstaged".  
 
-_Note:_  
-* _Now the commit is withdrawn and the file became_ __"modified and unstaged"__.  
-
-If you want to discard all the changes you made since the last bug-free commit.  
-```shell
+# If you want to discard all the changes you made since the last bug-free commit.  
 > git reset @ --hard # reset the working dir to last commit
 > git clean -fd # clean all untracked files and dirs
-```
 
-If you want to checkout the last committed version of some file:  
-* If you add/commit this old version of the file. The current version will be lost. This line is subject to test.  
-
-```shell
+# If you want to checkout the last committed version of some file (current version will be discarded):  
 > git checkout @~1 index.html
-```
 
-
-Now you improved the code in index.html and you committed it again.
-```shell
+# Now you improved the code in index.html and you committed it again.
 > git add index.html
 > git commit -m "bug-free improvement in index.html"
-```
 
-Then you realized you should include "README.md" in this commit.
-```shell
+# Then you realized you should include "README.md" in this commit.
 > git add README.md
 > git commit --amend
 # it will replace the last commit with this new one
 # a chance to re-write your commit msg is also provided.
 ```
 
-### Branch and Merge
+## Branch and Merge
 
 After you finalized a working version, some genius idea hit on you and you'd like to add some features and test them without corrupting the working version of code. You can create a "ideaTest" branch.
 ```shell
@@ -163,7 +156,7 @@ __The following shows you how to bounce between local directory and remote serve
 
 ---
 
-# Git Remote
+## Git Remote
 
 __When your code is ready to go to the server end - origin/master branch.__  
 _Note:_  
@@ -205,81 +198,72 @@ then push to server.
 > git push origin master
 ```
 ---
-### Compare
 
-diff local files between different branches:  
+## Git Compare
+ 
 ``` shell
+# diff local files between different branches
 git diff master:somedir branch:somedir
-```
 
-diff local branch and remote branch:  
-``` shell
+# diff local branch and remote branch:  
 git diff master origin/master
-```
 
-diff local files with those on the remote:  
-``` shell
+#diff local files with those on the remote:
 git diff origin/branch -- [file paths]
-```
 
-diff between different commits:  
-``` shell
+# diff between different commits:  
 git diff targetCommitHash^ targetCommitHash
-```
 
-### Other Notes
-
-Regret making dubious commits on master branch:  
-``` shell
-git add dubious.py
-git commit -m "this is the commit that I am about to regret making."
-git checkout -b keep_dubious_on_this_branch
-git checkout master
-git reset --hard <SHA1sum of the latest undubous commit>
-```
-
-Diverge push terminal to some other remote
-``` shell
-git remote set-url origin git@github.corp.ebay.com:apdrm/<project>.git
-git remote set-url --push origin git@github.corp.ebay.com:APD/<project>.git
-```
-
-Untrack files from git (should never track runtime files from the beginning):
-``` shell
-git rm --cached fileX
-```
-
-If you want to compare your local repo with someone else's repo:
-``` shell
+# If you want to compare your local repo with someone else's repo:
 > git remote add someone someRepo.git
 > git fetch someone somebranch
 > git diff mybranch someone/somebranch
 > git remote rm someone
 ```
 
-Delete branch locally and remotely:
-> git push origin --delete <branch_name>
+## Git Remove
+```shell
+# Untrack files from git (should never track runtime files from the beginning):
+git rm --cached fileX
+
+# Remove branch locally
 > git branch -d <branch_name>
+
+# Remove branch locally even if the branch is not merged into master yet
+> git branch -D <branch_name>
+
+# Remove branch remotely
+> git push origin --delete <branch_name>
+```
+
+## Other Notes
+``` shell
+# diverge push terminal to some other remote
+git remote set-url origin git@github.corp.ebay.com:apdrm/<project>.git
+git remote set-url --push origin git@github.corp.ebay.com:APD/<project>.git
+```
 
 When you pull from a repo with all kinds of runtime binaries and IDE-specific files. It won't go through because chances are that you have a lot of similar files, either untracked or modified but not committed in your local. But you really don't care about those auto-generated files and you just want to pull the update.  
 The following does:  
 1. fetch all from the target
 2. set local HEAD to FETCH_HEAD, which is a pointer to what has been fetched.
-3. clean all the untracked files.
+3. clean all the untracked files.  
+  
 ``` shell
 > git fetch target_repo target_branch
 > git reset --hard FETCH_HEAD
 > git clean -df
 ```
 
-Rename local branch  
+## Git Rename
+```shell
+# rename origin to destination
+> git remote rename origin destination
+
+# rename a branch
 > git checkout [target_branch]
 > git branch -m [new_branch_name]
-
-Delete local/remote branch
-> git branch -d <local_branch>
-> git push origin --delete <remote_branch>
-
+```
 
 # Git Workflow
 
