@@ -93,11 +93,14 @@ jar -tf xxxx.jar | grep [udf_mainClass]
 
 ## Network
 ```shell
-## mtr
+# mtr comibnes ping and traceroute
 > mtr [host] -rw -c 50
 
-# ping
+# keep pinging the host for up to 50 times in quiet mode
 > ping [host] -c 50 -q
+
+# try to connect to the host using telnet protocol see if the connect is through or there is any firewall blocking
+> telnet [host] [port] 
 
 # see what is going on on this port
 > ps -ef | grep 7600
