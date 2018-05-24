@@ -100,7 +100,7 @@ jar -tf xxxx.jar | grep [udf_mainClass]
 > ping [host] -c 50 -q
 
 # try to connect to the host using telnet protocol see if the connect is through or there is any firewall blocking
-> telnet [host] [port] 
+> telnet [host] [port]
 
 # see what is going on on this port
 > ps -ef | grep 7600
@@ -201,3 +201,9 @@ __How @JsonAutoDetect & @JsonIgnoreProperties(ignoreUnknown=true) helps mapping 
 In Spring, a POJO can be serialized to JSON and backward, only when getter() and setter() are defined for each private field.  
 When the POJO doesn't satify the condition, annotate it with @JsonAutoDetect.   
 When you want deserialize a JSON to the POJO but the JSON can be wrong or missing information, use @JsonIgnoreProperties.   
+
+__Understand corePoolSize, maxPoolSize and queueCapacity__  
+1. When a new request comes in, the server will start a new thread to take care of the request till the number of threads equals to __corePoolSize__;  
+2. If more requests come in, the server will put the requests in queue till the queue is filled up;  
+3. If more requests come in, the server will create a new thread up to maxPoolSize;
+4. If more requests come in, the server will reject them.
