@@ -105,6 +105,9 @@ jar -tf xxxx.jar | grep [udf_mainClass]
 # see what is going on on this port
 > ps -ef | grep 7600
 
+# kill whatever occupies the port
+> ps -ef | grep 7607 | cut -d ' ' -f 2 | xargs kill
+
 # map domain name [myaws.io] to IP locally
 > sudo vim /etc/hosts # aa.bbb.ccc.ddd myaws.io
 ```
