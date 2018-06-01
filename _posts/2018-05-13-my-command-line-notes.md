@@ -123,6 +123,12 @@ jar -tf xxxx.jar | grep [udf_mainClass]
 
 # list at reverse order of last modified time
 > ls -lrt
+
+# short cut for ps aux | grep
+> pgrep 
+
+# jvm process
+> jps
 ```
 
 
