@@ -129,6 +129,12 @@ jar -tf xxxx.jar | grep [udf_mainClass]
 
 # jvm process
 > jps
+
+# schedule job run in the background
+> crontab -e
+# sample use:
+# 0,30 * * * * cd ~/szang/toraAppMonitor && /usr/bin/python toraAppMonitor.py >> crontab.log
+# note: system ENVS such as (/etc/profile) or user ENVS such as ~/.bashrc are not set under crontab execution.
 ```
 
 
@@ -174,6 +180,9 @@ jar -tf xxxx.jar | grep [udf_mainClass]
 
 # kill app on yarn
 > yarn application -kill application_id
+
+# restart RM
+> yarn resourcemanager
 ```
 
 
