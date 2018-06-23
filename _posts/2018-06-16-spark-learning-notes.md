@@ -11,6 +11,10 @@ tag: spark
 
 
 
+### Spark On Yarn Achitecture
+
+<img src="{{ '/styles/images/spark-learning-notes/spark-on-yarn-architecture.png' }}" width="100%" />  
+
 ### Understand Executor 
 __where the abstraction sits in a range of growing computing power__  
 
@@ -60,7 +64,7 @@ With small number of cores, such as 1 core per executor, running multiple tasks 
 With large number of cores, such as 15 core per executor, there are two disadvantages on this approach as well:  
   1. HDFS throughput will be negatively affected.  
   2. Excessive RAM in a JVM leads to excessive garbage collection overheads.  
-  
+
 ### Dynamic Allocation  
 With spark.dynamicAllocation.enabled=true:  
   1. A job starts with (spark.dynamicAllocation.initialExecutors) number of executors.  
@@ -82,11 +86,15 @@ With spark on a MESOS cluster, TODO:
   
 With spark app deployed in 'client' mode, the driver process runs inside of client process JVM. Under this deployment, if client is remote to the cluster, the result will come back very slow due to high network latency.  
   
+<img src="{{ '/styles/images/spark-learning-notes/client-deploy.png' }}" width="70%" />  
+
 With spark app deployed in 'cluster' mode, the driver process runs inside of application master JVM, which is not the same thing as namenode/RM in the context of hadoop environment. Application master JVM is spinned off with (spark.driver.memory) amount of memory just like application executor JVM is spinned off with (spark.executor.memory) amount of memory managed by YARN. Physically, these processes could be running on the same node or different ones. Particularly, the driver process runs within a cluster where executors are provisioned.  
+
+<img src="{{ '/styles/images/spark-learning-notes/cluster-deploy.png' }}" width="70%" />  
   
 ### Memory Division  
   
-__what the below term really means subjects to further research__  
+__what the below terms really mean is subject to further research__  
   
 spark executor full memory =  
   1. spark.yarn.execitor.memoryOverhead  
@@ -94,6 +102,8 @@ spark executor full memory =
     1. spark.shuffle.memoryFraction  
     2. spark.storage.memoryFraction  
   
+<img src="{{ '/styles/images/spark-learning-notes/spark-memory-division.jpeg' }}" width="70%" />  
+
 ### Spark Driver
   
 A driver is a process running in a JVM that orchestrates a spark job. The node it is running on is namely the 'master' of the application. (Note: different from the namenode/RM in a YARN cluster). The driver does the following:  
