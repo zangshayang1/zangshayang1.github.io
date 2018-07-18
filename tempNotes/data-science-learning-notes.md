@@ -93,7 +93,7 @@ And:
 $$ E[{\hat \beta}] = \beta $$
 $$ Var[{\hat \beta}] = \frac{\sigma^2}{n s_{x}^2} $$
 $$ E[{\hat b}] = b $$
-$$ Var[{\hat b}] = \frac{\sigma^2}{n} (1 + \frac{{\bar x}^2}{s_{x}^2}) $$
+$$ Var[{\hat b}] = \frac{\sigma^2}{n} (1 + \frac{\bar x^2}{s_{x}^2}) $$
 $$ \sigma^2: variance \; of \; error \; term $$
 
 Which means:  
