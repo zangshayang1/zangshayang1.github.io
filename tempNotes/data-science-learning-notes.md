@@ -113,13 +113,18 @@ __Test conclusion:__ Only if the null hypothesis is rejected, can we say that in
 #### MLE
 __Maximize Likelihood Estimator__ is how you figure out the parameters:  
 $$ Likelihood(\beta_{0} = b_{0}, \beta_{1} = b_{1} | (x_{1}, y_{1}), (x_{2}, y_{2}), ..., (x_{n}, y_{n})) = Probability((x_{1}, y_{1}), (x_{2}, y_{2}), ..., (x_{n}, y_{n}) | \beta_{0} = b_{0}, \beta_{1} = b_{1}) $$
+
+Because each data point is independent:
 $$ Probability = \prod_{i}^{n} P(x = x_{i}, y = y_{i} | \beta_{0} = b_{0}, \beta_{1} = b_{1}) $$
+
 Given that error term follows normal distribution centered around 0:    
 $$ y - (\beta x + \beta_{0}) = \epsilon \tilde \; N(0, \sigma^{2}) $$
+
 And:  
 $$P(x = x_{i}, y = y_{i} | \beta_{0} = b_{0}, \beta_{1} = b_{1}) = P(\epsilon = \epsilon_{i}) $$
+
 We have:  
-$$ P(\epsilon = \epsilon_{i}) = \frac{1}{\sqrt{2\pi\sigma^2}} exp^{-\frac{(\epsilon_{i} - 0)^2}{2\sigma^2}} \; where \; \epsilon = y - (\beta x - \beta_{0})$$
+$$ P(\epsilon = \epsilon_{i}) = \frac{1}{\sqrt{2\pi\sigma^2}} exp^{-\frac{(\epsilon_{i} - 0)^2}{2\sigma^2}} \; where \; \epsilon_{i} = y_{i} - (\beta x_{i} - \beta_{0})$$
 If we take the logarithm over the above probability:  
 $$ \log(Probability) = n \log{\frac{1}{\sqrt{2\pi\sigma^2}}} - \frac{1}{2\sigma^2} \sum_{i}^{n}(y_{i} - (bx + b_{0}))^2 $$
 __So, maximizing the above likelihood is essentially minimizing the sum of squared residuals.__
@@ -223,10 +228,27 @@ $$ P(Y | X; \theta) = \prod_{i=1}^{n}P(y_{i}|x_{i};\theta) $$
 Then:  
 $$ \ln{P(Y | X; \theta)} = \sum_{i=1}^{n} \ln{P(y_{i}|x_{i};\theta)} $$
 
-And here comes of our logistic loss function:  
-$$ \ln{P(Y | X; \theta)} = \sum_{i=1}^{n} [y_{i} \ln{h_{\theta}(x_{i})} + (1-y_{i}) (1-h_{\theta}(x_{i}))] $$
+And here comes of our log likelihood function:  
+$$ \ln{P(Y | X; \theta)} = \sum_{i=1}^{n} [y_{i} \ln{h_{\theta}(x_{i})} + (1-y_{i}) \ln (1-h_{\theta}(x_{i}))] \;\; where \; y \in \{0, 1\} $$
+
+Another formalism of logistic regression is:  
+$$ P(Y = 1 | X; \theta) = h_{\theta}(X) $$
+$$ P(Y = -1 | X; \theta) = 1 - P(Y = 1 | X; \theta) = 1 - h_{\theta}(X) = h_{\theta}(-X) $$
+
+Unified to:  
+$$ P(Y | X; \theta) = \frac{1}{1 + e^{-Y \theta X}} $$
+
+Essentially, they all comes down to a term:
+$$ 1 + e^{-Y \theta X} $$
+
+Which is the main body of __logistic loss function__:
+$$ \frac{1}{\ln2} ln{(1 + e^{-Y \theta X})}$$
+
+__To conclude, in a logistic regression problem, maximizing likelihood is equivalent to minimizing its loss.__
 
 __After that, gradient descent comes into play.__
+
+__NOTE:__ the loss function for linear regression, with predications being continuous, is sum of squared error; the loss function for logistic regression, with predications being categorical, is logistic loss, entropy, hinge loss, etc.
 
 # Type I / Type II Error and False positive/negative
 
@@ -258,13 +280,12 @@ __After that, gradient descent comes into play.__
 __ROC curve__ is plot of sensitivity against (1 - specificity) in a binary classification problem.
 
 __Building ROC curve__:
-```
-Given model yhat = f(x), make predictions on test set.
+1. Given model yhat = f(x), make predictions on test set.
 
-Compare y_true and y_pred, accumulatively calculate (true positive rate, false positive rate).
+2. Compare y_true and y_pred, accumulatively calculate (true positive rate, false positive rate).
 
-Plot.
-```
+3. Plot.
+
 
 __NOTE:__ AUC is area under ROC curve, stand for the probability of  choosing positive predication over negative predication.
 
@@ -275,3 +296,119 @@ __Interpret ROC:__
 
 # Bias and Variance
 As model complexity increases, model bias on the training set decreases and model variances increases. The optimal model is achieved when the (bias + variance) is minimized. Before that point, the model is considered as underfitting. Beyond that point, the model is considered as overfitting, or say not generalize enough to be used in the real world.
+
+## Some picks on Machine Learning Models
+
+### KNN
+__KNN is subject to curse of dimension__, meaning when dimension of feature space is high, KNN becomes meaningless. Why? Quote from Prof. Pedro Domingos's paper at [here](https://homes.cs.washington.edu/~pedrod/papers/cacm12.pdf):  
+
+_[O]ur intuitions, which come from a three-dimensional world, often do not apply in high-dimensional ones. In high dimensions, most of the mass of a multivariate Gaussian distribution is not near the mean, but in an increasingly distant “shell” around it; and most of the volume of a high-dimensional orange is in the skin, not the pulp. If a constant number of examples is distributed uniformly in a high-dimensional hypercube, beyond some dimensionality most examples are closer to a face of the hypercube than to their nearest neighbor. And if we approximate a hypersphere by inscribing it in a hypercube, in high dimensions almost all the volume of the hypercube is outside the hypersphere. This is bad news for machine learning, where shapes of one type are often approximated by shapes of another._  
+_Another application, beyond machine learning, is nearest neighbor search: given an observation of interest, find its nearest neighbors (in the sense that these are the points with the smallest distance from the query point). But in high dimensions, a curious phenomenon arises: the ratio between the nearest and farthest points approaches 1, i.e. the points essentially become uniformly distant from each other. This phenomenon can be observed for wide variety of distance metrics, but it is more pronounced for the Euclidean metric than, say, Manhattan distance metric. The premise of nearest neighbor search is that "closer" points are more relevant than "farther" points, but if all points are essentially uniformly distant from each other, the distinction is meaningless._  
+
+
+### Linear Regression
+
+From KNN's perspective, if we use linear regression on a dataset, we are essentially cast features into a hyperplane where the linear predicator lies.
+
+### Decision Tree
+
+From a high level, we know that a decision tree model is built from calculating information gain at each feature and split at the point of highest gain. Essentially, this approach is calculating a local optimal instead of global optimal and it is better than linear regression in that each split de-correlates the respective feature from all other features. So in this sense, less noise due to feature dependencies.
+
+### Unbalanced Data
+1. If you have 100 data points and the unbalance ratio is 9: 1, apparently the number of data in minor group is too small for any training.
+2. If you have 1000 data points and the same unbalance ratio, you can still train on 100 minor group. Which means, if you have more data, your model training can tolerate higher degree of data unbalance.
+3. If you want an equal representation of the data, you can sub-sample major group to match minor group.
+
+
+# Tree - Forest - XGB
+
+### Tree
+
+A tree model figures out the next optimal split in terms of which __feature__ to use and what __value__ to split. In a __regression__ tree, it is done by iteratively going through all features and every possible value in each feature to find out the minimum SSE. In a __classification__ tree, it is done by maximizing __information gain.__  
+
+__Information Gain__ = prior entropy - posterior entropy.  
+$$ Entropy(t) = - \sum_{j} p(j|t) \log{p(j|t)} $$
+
+Another option is Gini:  
+$$ GINI(t) = 1 - \sum_{j} (p(j|t))^2 $$
+
+<img src="{{ '/styles/images/data-science-learning-notes/entropy-gini.png' }}" width="50%" />  
+
+During training, if we allow the tree to grow without __regularization__, it will overfit the data for sure. To prune the tree, we add a penalty term to limit tree size (depth or number of leave nodes).
+
+Another way to avoid overfitting is __bagging__.
+
+### Bagging
+
+Bagging is short for Bootstrap Aggregating. It is done by following steps:  
+1. Bootstrap: create __m__ sub datasets out of original dataset by sampling with replacement.
+2. Train m independent overfitted tree models on each sub dataset.
+3. Aggregate these models to make predications on test dataset by either majority voting or averaging their results.
+
+With the above bootstrap strategy, for each datapoint in the original dataset, the probability that it didn't get picked during the entire sampling process is: (sample n times)  
+$$ p = (1 - \frac{1}{n})^{n} $$
+
+When n approach infinity, the above approach:  
+$$ p = e^{-1} \approx 0.368 $$
+
+__Which means each bootstrapped dataset contains 63.2% of original dataset.__  
+
+__NOTE:__ bagging helps complex model (deep tree with high variance) generalize well. For simple model (shallow tree with high bias), it doesn't help much.
+
+
+__Problem__ with bagging: each "independent" model is still somewhat correlated with one another. After all, 63.2% means a lot of overlapped training data. To alleviate the correlation between trees, __random forest__ is developed.
+
+### Forest
+
+Based on __m-tree__ bagging strategy, forest can be built by randomly sampling __p__ features at each split, instead of using all features.  
+
+For a classification problem with total Q features, optimal p is the square root of Q. In a regression problem, optimal p is Q/3.
+
+__NOTE:__
+1. For each tree grown on a bootstrapped dataset, the error rate on unused testing dataset (36.8%) is called "out-of-bag" error rate. The averaged out-of-bag error rate is very much similar to cross validation error rate.
+2. One advantage about random forest is that the training of this model is easy to parallel.
+
+### XGBoost
+
+XGBoost is a popular library that we will talk later. Let's start from the most basic boosting - AdaBoosting.
+
+#### AdaBoosting
+
+Define a weak classifier to start:
+$$ {\hat y} = f_{\theta}^{1}(X) $$  
+Minimize the SSE or logistic loss to find the optimal model:
+$$ L = (y - {\hat y})^{2} $$
+$$ \theta = \underset{\theta}{\operatorname{argmin}} L $$
+Compute error rate on validation dataset and use it to calculate expansion factor:  
+$$ \alpha = \frac{1}{2} log(\frac{1 - e}{e}) $$
+Use it to increase the weights on mis-classified data points:
+$$ w_{2} = w_{1} e^{\alpha I(y_{i} <> {\hat y_{i}})} \; where \; I\; is\;identity\; matrix $$
+Now re-train the base model with weighted data points and achieve a new model that should gives lower bias by combining the previous classifier and the trained base model:  
+$$ {\hat y} = f_{\theta}^{2}(X) = f_{\theta}^{1}(X) + f_{\theta}^{'}(X) $$  
+Repeat the above steps for __m__ times (__m__ is the only hyperparameter in AdaBoosting so it is very easy to tune). Now aggregate __m__  classifiers weighted by each of their expansion factors to achieve our __AdaBoosting model__:
+$$ \sum_{i=1}^{m} \alpha_{i} f_{\theta}^{i}(X) $$
+
+__NOTES:__
+1. Boosting is a additive model framework that usually starts on a tree.
+2. More weights on a data point is equivalent to more number of such data points in normal weights.
+3. Weak base model gives more space for boosting optimization. Strong ones leave less space to learn.
+
+
+#### Gradient Boosting
+
+Gradient Boosting differs from AdaBoosting in their ways to find the optimal base model. AdaBoosting does so by increasing weights over mis-classified data points. Gradient Boosting does so by computing the gradient of error residuals.
+
+It usually starts with a constant predictor that equals the mean of data points to minimize the MSE:
+$$ {\hat y} = h_{0} = \theta_{0} x + \theta_{0c} $$
+$$ MSE = J(\theta_{0}) = \sum_{i=1}^{m}(y_{i} - {\hat y_{i}})^2 $$
+Gradient on error residuals:
+$$ \frac{\partial J(\theta_{0})}{\partial h_{0}} = y_{i} - {\hat y_{i}} $$
+$$ \nabla J(\theta_{0}) = Y - {\hat Y} $$
+Fit next model to the gradient:
+$$ h_{1} = \theta1  \frac{\partial J(\theta_{0})}{\partial h_{0}}  + \theta_{1c} $$
+Aggregate with previous model to __find local optimal this way__:
+$$ {\hat y}_{next} = h_{0} + \gamma_{i} h1$$
+Repeat the above for a number of times. This usually out-performs AdaBoosting.
+
+[wiki reference](https://en.wikipedia.org/wiki/Gradient_boosting)  
+[kaggle reference](http://blog.kaggle.com/2017/01/23/a-kaggle-master-explains-gradient-boosting/)  
