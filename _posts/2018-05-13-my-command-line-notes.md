@@ -33,6 +33,9 @@ Last Update: 2018-05-13
 
 # compile only beam-sdks-java-core module in beam project
 > mvn --projects :beam-sdks-java-core clean install
+
+# build a war
+> mvn clean package war:war
 ```
 
 ## Java
