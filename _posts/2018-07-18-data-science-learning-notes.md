@@ -104,7 +104,7 @@ Now if we provide:
 $$ H_{0}: \beta = 0 $$
 
 We can use __t-test__ to exam the hypothesis:  
-$$ t_{n-2} = \frac{{\hat \beta} - \mu}{\frac{s}{\sqrt{n}}} where \; \mu = E[{\hat \beta}], \; s = \sqrt{Var[{\hat \beta}]} $$
+$$ t_{n-2} = \frac{\hat \beta - \mu}{\frac{s}{\sqrt{n}}} where \; \mu = E[{\hat \beta}], \; s = \sqrt{Var[{\hat \beta}]} $$
 
 __Test conclusion:__ Only if the null hypothesis is rejected, can we say that including the feature x in the model can help explain y.
 
