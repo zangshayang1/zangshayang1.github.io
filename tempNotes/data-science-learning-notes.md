@@ -98,7 +98,7 @@ $$ \sigma^2: variance \; of \; error \; term $$
 
 Which means:  
 $$ {\hat \beta} \tilde \; N(\beta, \; \frac{\sigma^2}{n s_{x}^2})$$
-$$ {\hat b} \tilde \; N(b, \; \frac{\sigma^2}{n} (1 + \frac{{\bar x}^2}{s_{x}^2}) $$
+$$ {\hat b} \tilde \; N(b, \; \frac{\sigma^2}{n} (1 + \frac{\bar x^2}{s_{x}^2}) $$
 
 Now if we provide:  
 $$ H_{0}: \beta = 0 $$
