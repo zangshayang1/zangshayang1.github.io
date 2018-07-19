@@ -13,7 +13,7 @@ tag: dataScience
 
 ## Chi Square Distribution
 
-<img src="{{ '/styles/images/data-science-learning-notes/chi-square-distribution.png' }}" width="100%" />  
+<img src="{{ '/styles/images/data-science-learning-notes/chi-square-distribution.png' }}" width="50%" />  
 
 
 ### Definition
