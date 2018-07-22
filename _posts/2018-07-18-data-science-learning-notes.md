@@ -511,3 +511,73 @@ Repeat the above for a number of times. This usually out-performs AdaBoosting.
 
 [wiki reference](https://en.wikipedia.org/wiki/Gradient_boosting)  
 [kaggle reference](http://blog.kaggle.com/2017/01/23/a-kaggle-master-explains-gradient-boosting/)  
+
+# Matrix Factorization
+
+## SVD
+
+$$ M_{(m, n)} = U_{(m, m)} S_{(m, n)} V_{(n, n)} $$  
+
+Where:  
+
+$$ U^{T}U = I $$  
+
+$$ S: diagnal \; singular \; values \; of \; M$$  
+
+$$ V^{T}V = I $$  
+
+## PCA
+
+PCA is a process to find eigenvalues and eigenvectors of the covariance matrix of the data(M).  
+
+Covariance matrix is defined as:  
+
+$$ M^{T} M $$
+
+Sop mathematically, we want a matrix V such that:  
+
+$$ V^{T} M^{T} M V = \Lambda $$  
+
+$$ V^{T} V = I $$  
+
+And its relation with SVD is:  
+
+$$ V^{T} M^{T} M V =  V^{T} (USV)^{T} USV V = V^{T} (VS^{T}U^{T}) USV^{T} V = S^{T} S = \Lambda $$  
+
+## Matrix Factorization Applies in Recommender
+
+### Collaborative Filtering
+
+The estimated rating that user u would give to item i is:  
+
+$$ r_{(u, i)} = \frac{\sum_{j \in items(u)} similarity(i, j) * r_{(u, j)}}{\sum_{j \in items(u)} similarity(i, j)} $$  
+
+__NOTE: Similarity can be defined by euclidean distance, Pearson similarity, consine similarity or Jaccard index.__  
+
+### Matrix Factorization + SGD
+
+Mathematically, we want to find U, V such that:  
+
+$$ M_{(m, n)} \approx U_{(m, k)} V_{(k, n)} $$  
+
+$$ Usually \; k << min(m, n) $$
+
+Equivalently, we want to minimize:  
+
+$$ \sum (M_{i, j} - U_{i, j} V_{i, j})^{2} $$  
+
+Minimization process is also the training process via SGD. At the end of this process, we found two latent vectors, U and V that best characterize the dataset from feature space and data-to-data variance space. In case that users rate movies, the ratings of movies make up the feature space and each user can be viewed as a data point. Or vice versa.  
+
+__How SGD applies in a user-item-rating matrix factorization?__  
+```
+initialize two factor matrix U, V
+
+for each user u:
+  for each item i:
+    compute the squared error between M(u, i) and U(u, k) * V(k, i)
+    compute the gradient g(u) relative to U(u, k)
+    compute the gradient g(v) relative to V(k, i)
+    for each k:
+      U'(u, k) <- U(u, k) - learning rate * g(u)
+      V'(k, i) <- V(k, i) - learning rate * g(v)
+```
