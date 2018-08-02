@@ -149,6 +149,21 @@ _You DO want to rebase when:_
 * _You want to hide some "commit history" or "branch merge history" before pushing them to remote server._  
 * _You are one of the developers for some large project and integration manager pushed someone's code to remote server. (This is when you rebase your work on top of the latest code on remote server.)_
 
+Delete local merged branch  
+```shell
+> git branch -d [branch]
+```
+
+Delete local unmerged branch
+```shell
+> git branch -D [branch]
+```
+
+Delete remote branch  
+```shell
+> git push origin --delete [branch]
+```
+
 ---
 
 __Now you know how to develop your code back and forth locally.__  
@@ -197,10 +212,11 @@ then push to server.
 > git commit -m "resolve conflict at line 7, index.html when merging with somebody's code."
 > git push origin master
 ```
+
 ---
 
 ## Git Compare
- 
+
 ``` shell
 # diff local files between different branches
 git diff master:somedir branch:somedir
@@ -248,7 +264,7 @@ The following does:
 1. fetch all from the target
 2. set local HEAD to FETCH_HEAD, which is a pointer to what has been fetched.
 3. clean all the untracked files.  
-  
+
 ``` shell
 > git fetch target_repo target_branch
 > git reset --hard FETCH_HEAD
