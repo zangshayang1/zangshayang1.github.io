@@ -70,5 +70,5 @@ tag: youtube
 __Make sure__: you push ALL 3 updates up to your Github Repo.
 
 
-* my thanks to the author: Adam Wade Harris and his [original post](http://www.adamwadeharris.com/how-to-easily-embed-youtube-videos-in-jekyll-sites-without-a-plugin/) on how to embed the video.
+* my thanks to the author: Adam Garrett-Harris and his [original post](https://adam.garrett-harris.com/how-to-easily-embed-youtube-videos-in-jekyll-sites-without-a-plugin) on how to embed the video.
 * my thanks to the author: Avexdesigns and his [original post](https://avexdesigns.com/responsive-youtube-embed/) on how to make the video responsive.
