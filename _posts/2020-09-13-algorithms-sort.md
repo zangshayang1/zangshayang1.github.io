@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  Algorithms: Sort
+title:  Algorithms - Sort
 date:   2020-09-13 15:00:00 +0800
 categories: study-notes
 tag: algorithms
@@ -11,7 +11,7 @@ tag: algorithms
 
 
 
-# Algorithms: Sort
+# Algorithms - Sort
 
 ## Quick Sort
 
