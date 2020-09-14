@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  Leetcode Problems
+title:  Algorithms: Sort
 date:   2020-09-13 15:00:00 +0800
 categories: study-notes
 tag: algorithms
@@ -10,58 +10,57 @@ tag: algorithms
 {:toc}
 
 
-# Algorithms and Data Structure
 
-## Sort
+# Algorithms: Sort
 
-### Quick Sort
+## Quick Sort
 
-#### Classic
+### Classic
 ---
 ```python
 class ClassicQuickSort:
 
-	def quickSort(self, nums):
+  def quickSort(self, nums):
 
-		def swap(A, i, j):
-			tmp = A[i]
-			A[i] = A[j]
-			A[j] = tmp
+  	def swap(A, i, j):
+      tmp = A[i]
+      A[i] = A[j]
+      A[j] = tmp
 
-		# Think about the following array when dealing with quick sort
-		# [. . . l . . k . . . p]
-		# l marks the first element that is bigger than pivot, to be swapped with p very soon
-		# k marks the current element
-		# p marks the pivot element
-		def partition(A, i, j):
-			l, p = i, j
-			for k in range(i, j):
-				if A[k] <= A[p]:
-					swap(A, k, l)
-					l += 1
-			swap(A, l, p)
-			return l
+  	# Think about the following array when dealing with quick sort
+  	# [. . . l . . k . . . p]
+  	# l marks the first element that is bigger than pivot, to be swapped with p very soon
+  	# k marks the current element
+  	# p marks the pivot element
+  	def partition(A, i, j):
+      l, p = i, j
+      for k in range(i, j):
+      	if A[k] <= A[p]:
+      		swap(A, k, l)
+      		l += 1
+      swap(A, l, p)
+      return l
 
-		def helper(A, s, e):
+  	def helper(A, s, e):
       # In recursion, when p points to the first or the last element in A[s, e + 1]
       # then either (p - 1) < s or (p + 1) > e will hold
       # so the terminating condition should include 's > e'.
-			if s >= e:
-				return ;
-			p = partition(A, s, e)
-			helper(A, s, p - 1)
-			helper(A, p + 1, e)
-			return ;
+      if s >= e:
+      	return ;
+      p = partition(A, s, e)
+      helper(A, s, p - 1)
+      helper(A, p + 1, e)
+      return ;
 
-		if len(nums) == 0:
+  	if len(nums) == 0:
       return nums;
 
-		helper(nums, 0, len(nums) - 1)
+    helper(nums, 0, len(nums) - 1)
 
-		return nums;
+    return nums;
 ```
 ---
-#### Variation - Quick Select
+### Variation - Quick Select
 ---
 ```python
 class QuickSelect:
@@ -111,5 +110,3 @@ class QuickSelect:
     return helper(nums, 0, len(nums) - 1, k - 1)
 ```
 ---
-
-# Other Resource Definitions
