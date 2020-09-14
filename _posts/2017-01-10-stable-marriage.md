@@ -2,7 +2,7 @@
 layout: post
 title: ICS260 - Stable Marriage
 date: 2017-02-07 16:20:00 -0800
-categories: Study-Notes
+categories: study-notes
 tag: algorithms
 ---
 

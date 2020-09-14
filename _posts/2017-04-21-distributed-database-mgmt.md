@@ -2,7 +2,7 @@
 layout: post
 title: ICS223 Distributed Database Management
 date: 2017-04-21 1:00:00 -0700
-categories: Study-Notes
+categories: study-notes
 tag: distributed
 ---
 * content

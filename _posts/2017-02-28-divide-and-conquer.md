@@ -2,7 +2,7 @@
 layout: post
 title: ICS260 - Divide and Conquer
 date: 2017-02-28 13:20:00 -0800
-categories: Study-Notes
+categories: study-notes
 tag: algorithms
 ---
 

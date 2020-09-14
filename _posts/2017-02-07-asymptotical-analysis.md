@@ -2,7 +2,7 @@
 layout: post
 title: ICS260 - Asymptotical Analysis
 date: 2017-02-07 19:39:00 -0800
-categories: Study-Notes
+categories: study-notes
 tag: algorithms
 ---
 

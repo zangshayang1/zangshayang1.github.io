@@ -2,7 +2,7 @@
 layout: post
 title: Docker on AWS EC2
 date: 2018-05-09 21:00:00 -0700
-categories: HOW-TO
+categories: other-how-to
 tag: docker
 ---
 * content

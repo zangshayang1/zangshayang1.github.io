@@ -2,7 +2,7 @@
 layout: post
 title:  How To Deploy Jekyll Powered Static Blog
 date:   2018-05-14 01:08:00 +0800
-categories: How-To
+categories: other-how-to
 tag: Jekyll
 ---
 

@@ -2,7 +2,7 @@
 layout: post
 title: DataStructure - Binary Tree
 date: 2017-05-06 16:00:00 -0800
-categories: Study-Notes
+categories: study-notes
 tag: dataStructure
 ---
 

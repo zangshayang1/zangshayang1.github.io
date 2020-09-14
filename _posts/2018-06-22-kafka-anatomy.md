@@ -2,7 +2,7 @@
 layout: post
 title:  Kafka Anatomy
 date:   2018-06-22 22:08:00 +0800
-categories: Study-Notes
+categories: study-notes
 tag: kafka
 ---
 

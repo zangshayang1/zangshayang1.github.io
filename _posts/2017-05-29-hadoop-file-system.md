@@ -2,7 +2,7 @@
 layout: post
 title: Hadoop File System
 date: 2017-05-28 13:00:00 -0800
-categories: Paper-summary
+categories: paper-summary
 tag: distributed-computing
 ---
 

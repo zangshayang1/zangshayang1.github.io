@@ -2,7 +2,7 @@
 layout: post
 title:  Spark Learning Notes
 date:   2018-06-16 11:08:00 +0800
-categories: Study-Notes
+categories: study-notes
 tag: spark
 ---
 

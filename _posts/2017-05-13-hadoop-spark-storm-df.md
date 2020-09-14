@@ -2,7 +2,7 @@
 layout: post
 title: Hadoop-Spark-Storm-Mesos-DataFlow
 date: 2017-05-13 21:00:00 -0800
-categories: Paper-summary
+categories: paper-summary
 tag: distributed-computing
 ---
 

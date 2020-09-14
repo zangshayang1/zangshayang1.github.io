@@ -2,7 +2,7 @@
 layout: post
 title:  Spring Boot
 date:   2018-05-27 22:08:00 +0800
-categories: Study-Notes
+categories: study-notes
 tag: Springboot
 ---
 

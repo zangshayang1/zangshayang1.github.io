@@ -2,7 +2,7 @@
 layout: post
 title: ICS260 - NP Complete
 date: 2017-03-17 17:30:00 -0800
-categories: Study-Notes
+categories: study-notes
 tag: algorithms
 ---
 

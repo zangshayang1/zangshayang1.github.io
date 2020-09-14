@@ -2,7 +2,7 @@
 layout: post
 title: Google File System
 date: 2017-05-09 21:00:00 -0800
-categories: Paper-summary
+categories: paper-summary
 tag: GFS
 ---
 

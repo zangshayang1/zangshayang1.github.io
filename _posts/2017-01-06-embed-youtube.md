@@ -2,7 +2,7 @@
 layout: post
 title:  Embed youtube
 date:   2017-01-06 00:48:00 -0800
-categories: HOW-TO
+categories: other-how-to
 youtubeID: iX5V1WpxxkY
 tag: youtube-embedding
 ---
@@ -52,7 +52,7 @@ Under you _posts_ dir, create a post with propriate jekyll front matter and incl
 layout: post
 title:  Embed youtube
 date:   2017-01-06 00:48:00 -0800
-categories: HOW-TO
+categories: other-how-to
 youtubeID: iX5V1WpxxkY --> put up the ID you wanted instead
 tag: youtube
 ---

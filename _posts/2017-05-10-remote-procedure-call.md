@@ -2,7 +2,7 @@
 layout: post
 title: About RPC (Remote Procedure Call)
 date: 2017-05-10 21:00:00 -0800
-categories: Paper-summary
+categories: paper-summary
 tag: RPC
 ---
 

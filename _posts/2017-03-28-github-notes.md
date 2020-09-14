@@ -2,7 +2,7 @@
 layout: post
 title: Github Notes
 date: 2017-03-28 13:30:00 -0700
-categories: Study-Notes
+categories: study-notes
 tag: github
 ---
 * content

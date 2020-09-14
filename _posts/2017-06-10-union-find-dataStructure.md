@@ -2,7 +2,7 @@
 layout: post
 title: DataStructure - UnionFind
 date: 2017-06-10 13:00:00 -0700
-categories: Study-Notes
+categories: study-notes
 tag: dataStructure
 ---
 * content

@@ -2,7 +2,7 @@
 layout: post
 title: ICS260 - Network Flow Problem
 date: 2017-03-07 21:30:00 -0800
-categories: Study-Notes
+categories: study-notes
 tag: algorithms
 ---
 

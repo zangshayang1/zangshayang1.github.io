@@ -2,7 +2,7 @@
 layout: post
 title:  PostgreSQL Learning Notes
 date:   2018-05-14 23:08:00 +0800
-categories: Study-Notes
+categories: study-notes
 tag: PostgreSQL
 ---
 

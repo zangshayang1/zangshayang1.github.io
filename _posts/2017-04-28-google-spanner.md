@@ -2,7 +2,7 @@
 layout: post
 title: Google Spanner Architecture
 date: 2017-04-28 17:00 -0700
-categories: Paper-summary
+categories: paper-summary
 tag: distributed
 ---
 * content

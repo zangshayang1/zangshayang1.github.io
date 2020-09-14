@@ -2,7 +2,7 @@
 layout: post
 title:  Heroku Learning Notes
 date:   2018-05-14 19:18:00 +0800
-categories: Study-Notes
+categories: study-notes
 tag: heroku
 ---
 
