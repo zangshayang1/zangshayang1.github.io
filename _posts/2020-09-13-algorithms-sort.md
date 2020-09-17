@@ -11,11 +11,9 @@ tag: algorithms
 
 
 
-# Algorithms - Sort
+# Quick Sort
 
-## Quick Sort
-
-### Classic
+## Classic Quick Sort
 ---
 ```python
 class ClassicQuickSort:
@@ -60,7 +58,7 @@ class ClassicQuickSort:
     return nums;
 ```
 ---
-### Variation - Quick Select
+## Variation - Quick Select
 ---
 ```python
 class QuickSelect:
@@ -110,3 +108,150 @@ class QuickSelect:
     return helper(nums, 0, len(nums) - 1, k - 1)
 ```
 ---
+
+# Merge Sort
+
+### Classic Merge Sort
+---
+```python
+class ClassicMergeSort:
+
+  def mergeSort(self, nums):
+
+    def mergeSortHelper(A, s, e):
+      if s == e:
+        return [A[s]]
+
+      m = (s + e) // 2
+      L = mergeSortHelper(A, s, m)
+      R = mergeSortHelper(A, m + 1, e)
+
+      S = [-1 for _ in range(len(L) + len(R))]
+
+      i, j = 0, 0
+      while i < len(L) and j < len(R):
+        if L[i] <= R[j]:
+          S[i + j] = L[i]
+          i += 1
+        else:
+          S[i + j] = R[j]
+          j += 1
+
+      while i < len(L):
+        S[i + j] = L[i]
+        i += 1
+
+      while j < len(R):
+        S[i + j] = R[j]
+        j += 1
+
+      return S
+
+    assert len(nums) > 0
+
+    return mergeSortHelper(nums, 0, len(nums) - 1)
+```
+---
+### Variation - Merge Sort LinkedList
+---
+```python
+class MergeSortLinkedList:
+
+  def mergeSort(self, head):
+
+    def halve(head):
+      slow, fast, last = head, head, None
+      while fast is not None and fast.next is not None:
+        fast = fast.next.next
+        last = slow
+        slow = slow.next
+      last.next = None
+      return head, slow
+
+    if head is None or head.next is None:
+      return head
+
+    l, r = halve(head)
+    l = mergeSort(l)
+    r = mergeSort(r)
+    s = ListNode(-1)
+    sp = s
+    while l is not None and r is not None:
+      if l.val < r.val:
+        s.next = l
+        l = l.next
+        s = s.next
+      else:
+        s.next = r
+        r = r.next
+        s = s.next
+
+    if l is not None:
+      s.next = l
+    if r is not None:
+      s.next = r
+
+    return sp.next
+```
+---
+### Variation - Merge K Sorted LinkedList
+---
+```python
+class MergeKSortedLinkedList:
+
+  '''
+  Given a list of sorted linkedlist head
+  Output a merged sorted linkedlist head
+
+  Input:
+    [
+      1->4->5,
+      1->3->4,
+      2->6
+    ]
+
+  Output:
+    1->1->2->3->4->4->5->6
+  '''
+  def mergeKLists(self, lists):
+
+    assert len(lists) > 0
+
+    if len(lists) == 1:
+      return lists[0]
+
+    m = len(lists) // 2
+    l = self.mergeKLists(lists[:m])
+    r = self.mergeKLists(lists[m:])
+
+    s = ListNode(-1)
+    sp = s # pointing at mocked head
+    while l is not None and r is not None:
+      if l.val < r.val:
+        s.next = l
+        l = l.next
+        s = s.next
+      else:
+        s.next = r
+        r = r.next
+        s = s.next
+
+    # how it handles remaining elements in LinkedList is diff from in array
+    if l is not None:
+      s.next = l
+    if r is not None:
+      s.next = r
+
+    return sp.next
+```
+---
+
+# References
+
+### LinkedList ListNode
+```python
+class ListNode:
+  def __init__(self, x):
+    self.val = x
+    self.next = None
+```
