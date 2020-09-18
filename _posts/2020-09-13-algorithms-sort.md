@@ -20,7 +20,7 @@ class ClassicQuickSort:
 
   def quickSort(self, nums):
 
-  	def swap(A, i, j):
+    def swap(A, i, j):
       tmp = A[i]
       A[i] = A[j]
       A[j] = tmp
@@ -30,16 +30,16 @@ class ClassicQuickSort:
   	# l marks the first element that is bigger than pivot, to be swapped with p very soon
   	# k marks the current element
   	# p marks the pivot element
-  	def partition(A, i, j):
+    def partition(A, i, j):
       l, p = i, j
       for k in range(i, j):
       	if A[k] <= A[p]:
-      		swap(A, k, l)
-      		l += 1
+          swap(A, k, l)
+          l += 1
       swap(A, l, p)
       return l
 
-  	def helper(A, s, e):
+    def helper(A, s, e):
       # In recursion, when p points to the first or the last element in A[s, e + 1]
       # then either (p - 1) < s or (p + 1) > e will hold
       # so the terminating condition should include 's > e'.
@@ -50,7 +50,7 @@ class ClassicQuickSort:
       helper(A, p + 1, e)
       return ;
 
-  	if len(nums) == 0:
+    if len(nums) == 0:
       return nums;
 
     helper(nums, 0, len(nums) - 1)
@@ -108,6 +108,57 @@ class QuickSelect:
     return helper(nums, 0, len(nums) - 1, k - 1)
 ```
 ---
+### Variation - Sort RGB Color
+---
+```python
+class SortColorRGB:
+  '''
+  Given a sequence of RGB colored balls, 0 - R, 1 - G, 2 - B.
+  Output sorted sequence.
+
+  Input: [2, 0, 2, 1, 1, 0]
+  Output: [0, 0, 1, 1, 2, 2]
+
+  Input: [1, 2, 0]
+  Output: [0, 1, 2]
+  '''
+  def sort(self, nums):
+
+    def swap(nums, i, j):
+      tmp = nums[i]
+      nums[i] = nums[j]
+      nums[j] = tmp
+
+    assert len(nums) > 0
+
+    l, r = 0, len(nums) - 1
+    i, pv = 0, 1
+    # This algorithm is inspired by quick sort partition by pivot
+    while l <= i <= r:
+      # during this while loop, l always points to 0 or the first 1 from the left
+      # when l and i point at 2 at the beginning of this while loop
+      # the element will be swapped till l and i not pointing at 2 any more
+      # after that, the elements swapped to the back will either be 0 or 1
+      # that's why i always advances
+      if nums[i] < pv:
+        swap(nums, i, l)
+        l += 1
+        i += 1
+      # when i points at 2, it will be swapped with the element r is pointing at
+      # the elements behind r is definitely 2
+      # but the elements swapped to the front can be anything
+      # that's why i doesn't advance
+      elif nums[i] > pv:
+        swap(nums, i, r)
+        r -= 1
+      # when nums[i] == 1, nothing change, advance i
+      else:
+        i += 1
+
+    return ;
+```
+---
+
 
 # Merge Sort
 
@@ -245,6 +296,22 @@ class MergeKSortedLinkedList:
     return sp.next
 ```
 ---
+
+# Counting Sort
+
+### Counting Sort - Array indexing and manipulation
+---
+```python
+class CountingSort:
+
+  def countingSort(self):
+
+```
+---
+
+# Insertion Sort
+
+
 
 # References
 
