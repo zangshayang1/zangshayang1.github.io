@@ -14,7 +14,7 @@ tag: algorithms
 # Quick Sort
 
 ## Classic Quick Sort
----
+
 ```python
 class ClassicQuickSort:
 
@@ -57,9 +57,9 @@ class ClassicQuickSort:
 
     return nums;
 ```
----
-## Variation - Quick Select
----
+
+## Variant - Quick Select
+
 ```python
 class QuickSelect:
 
@@ -107,9 +107,9 @@ class QuickSelect:
 
     return helper(nums, 0, len(nums) - 1, k - 1)
 ```
----
-### Variation - Sort RGB Color
----
+
+## Variant - Sort RGB Color
+
 ```python
 class SortColorRGB:
   '''
@@ -157,13 +157,13 @@ class SortColorRGB:
 
     return ;
 ```
----
+
 
 
 # Merge Sort
 
-### Classic Merge Sort
----
+## Classic Merge Sort
+
 ```python
 class ClassicMergeSort:
 
@@ -202,9 +202,9 @@ class ClassicMergeSort:
 
     return mergeSortHelper(nums, 0, len(nums) - 1)
 ```
----
-### Variation - Merge Sort LinkedList
----
+
+## Variant - Merge Sort LinkedList
+
 ```python
 class MergeSortLinkedList:
 
@@ -244,9 +244,9 @@ class MergeSortLinkedList:
 
     return sp.next
 ```
----
-### Variation - Merge K Sorted LinkedList
----
+
+## Variant - Merge K Sorted LinkedList
+
 ```python
 class MergeKSortedLinkedList:
 
@@ -295,27 +295,71 @@ class MergeKSortedLinkedList:
 
     return sp.next
 ```
----
 
-# Counting Sort
-
-### Counting Sort - Array indexing and manipulation
----
-```python
-class CountingSort:
-
-  def countingSort(self):
-
-```
----
 
 # Insertion Sort
 
+## Classic Insertion Sort
+
+```python
+class ClassicInsertionSort:
+
+  def insertionSort(self, nums):
+
+    def swap(nums, i, j):
+      tmp = nums[i]
+      nums[i] = nums[j]
+      nums[j] = tmp
+
+    assert len(nums) > 1
+    # invariant: the elements before i are always sorted
+    for i in range(1, len(nums)):
+      j = i
+      while j > 0 and nums[j - 1] > nums[j]:
+        swap(nums, j, j - 1)
+        j -= 1
+
+    return nums;
+```
+
+## Variant - Insertion Sort LinkedList
+
+```python
+class InsertionSortLinkedList:
+
+  def insertSort(self, head):
+
+    p1 = head
+    dummy = ListNode(-1)
+    while p1 is not None:
+      p2 = dummy.next
+      prev_p2 = dummy
+      while p2 is not None and p1.val > p2.val:
+        # find the first occurrence of p2.val >= p1.val
+        # as p2 is walking up (ascending)
+        prev_p2 = p2
+        p2 = p2.next
+
+      p1_next = p1.next
+      prev_p2.next = p1
+      p1.next = p2
+      p1 = p1_next
+
+    return dummy.next
+```
+
+# Wiggle Sort
+
+## Classic Wiggle Sort - Information Entrop
+```python
+
+```
 
 
 # References
 
-### LinkedList ListNode
+## LinkedList ListNode
+
 ```python
 class ListNode:
   def __init__(self, x):
