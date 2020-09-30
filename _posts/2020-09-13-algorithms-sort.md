@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  Algorithms - Sort
-date:   2020-09-13 15:00:00 +0800
+date:   2020-09-13 15:00:00 -0700
 categories: study-notes
 tag: algorithms
 ---
@@ -450,8 +450,6 @@ class WiggleSort_2:
 
 # Resources
 
-## LinkedList ListNode
-
 ```python
 class ListNode:
   def __init__(self, x):
@@ -459,7 +457,7 @@ class ListNode:
     self.next = None
 ```
 
-## Helper Function
+# Helper Function
 
 ```python
 def swap(nums, i, j):
