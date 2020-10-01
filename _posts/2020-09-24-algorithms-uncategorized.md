@@ -200,7 +200,6 @@ Given a 2D matrix with 0s and 1s.
 Find the best meeting point to minimize people's traveling distances.
 Distance is calculated as Manhattan Distance, meaning no diagonal step can be taken.
 '''
-```python
 class BestMeetingPoint2D:
 
   def bestMeetingPoint(M):
