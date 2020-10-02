@@ -10,6 +10,54 @@ tag: algorithms
 {:toc}
 
 
+# Find Kth In Matrix
+
+## Kth Smallest Element in Row-wise and Column-wise Sorted Matrix
+```python
+'''
+Given a partially sorted 2D matrix.
+Each row, Matrix[i][j] < Matrix[i][j+1]
+Each column, Matrix[i][j] < Matrix[i+1][j]
+
+Find kth smallest element.
+'''
+class KthSmallestInSortedMatrix:
+
+  def findKthSmallest(M, K):
+
+    assert len(M) > 0 and len(M[0]) > 0
+    assert K > 0
+
+    x, y = 0, 0
+    visited = [[False for _ in range(len(M[0]))] for _ in range(len(M))]
+
+    # Ref: Algorithms: PriorityQueue MinHeap implementation
+    # Below syntax is technically incorrect, just for clear illustration purpose
+    pq = MinHeap([], key = lambda tuple : tuple[2])
+
+    pq.push((x, y, M[x][y]))
+    visited[x][y] = True
+    # Use PriorityQueue to maintain a list of candidate elements - a frontier of the smallest
+    # by traversing to the right or the below, where the next smallest elements are.
+    # Keep pop the current smallest element till K = 1, then the next element is what we want.
+    # Of course you don't want to double count any element.
+    while K > 1:
+      element = pq.pop()
+      x, y, v = element
+
+      if x + 1 < len(M) and not visited[x + 1][y]:
+        pq.push((x + 1, y, M[x + 1][y]))
+        visited[x + 1][y] = True
+
+      if y + 1 < len(M[0]) and not visited[x][y + 1]:
+        pq.push((x, y + 1, M[x][y + 1]))
+        visited[x][y + 1] = True
+
+      k -= 1
+
+    return pq.pop()[2]
+```
+
 # Merge intervals
 
 ## Merge Sorted Intervals 1
