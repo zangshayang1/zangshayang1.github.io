@@ -12,7 +12,70 @@ tag: algorithms
 
 # Find Kth In Matrix
 
-## Kth Smallest Element in Row-wise and Column-wise Sorted Matrix
+## Square Matrix In Spiral Order
+```python
+'''
+Given a positive integer n.
+Return a 2D matrix filled with 1, 2, ..., n^2 in spiral order.
+'''
+class SquareMatrixInSpiralOrder:
+
+  def classic(n):
+    dirs = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+    M = [[None for _ in range(n)] for _ in range(n)]
+    visited = [[False for _ in range(n)] for _ in range(n)]
+
+    i = 0
+    x, y = 0, -1
+    # when i is conditionally incremented
+    # think twice on the termination condition.
+    # easy to go into infinite loop
+    while i < n ** 2:
+      for d in dirs:
+        dx, dy = d
+        for _ in range(n):
+          if -1 < x + dx < n and -1 < y + dy < n and not visited[x + dx][y + dy]:
+            x = x + dx
+            y = y + dy
+            i += 1
+            M[x][y] = i
+            visited[x][y] = True
+          else:
+            break
+
+    return M
+
+  def improved(n):
+    # Note the order of these direction tuples is diff from # Ref: SquareMatrixInSpiralOrder:classic
+    dirs = [(1, 0), (0, -1), (-1, 0), (0, 1)]
+    M = [[None for _ in range(n)] for _ in range(n)]
+    # Optimized in space complexicity
+
+    # fill the first row separately and start from downward
+    # so that the below # observation holds
+    for i in range(n):
+      M[0][i] = i + 1
+
+    i = n
+    x, y = 0, n - 1
+    counter = -1 # count the number of turns already made
+    while i < n ** 2:
+      for d in dirs:
+        dx, dy = d
+        counter += 1
+        for _ in range(1, n - counter // 2): # observation: shrink by 1 after every 2 turns
+          if -1 < x < n and -1 < y < n:
+            x = x + dx
+            y = y + dy
+            i += 1
+            M[x][y] = i
+          else:
+            break
+
+    return M
+```
+
+## Kth Smallest In Partially Sorted Matrix
 ```python
 '''
 Given a partially sorted 2D matrix.
