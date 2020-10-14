@@ -10,6 +10,8 @@ tag: algorithms
 {:toc}
 
 
+Last Update: 2020-10-13
+
 # Basics
 
 ## Get Tree Height
@@ -241,6 +243,99 @@ class IdenticalTree:
         bstack.append(b.left)
 
     return True
+```
+
+## Mirror Tree
+```python
+'''
+A mirror tree is symmetric around its center.
+
+Slightly different from # Ref: IdenticalTree.
+'''
+class MirrorTree:
+
+  def recursively(self, a, b):
+    if a is None and b is None:
+      return True
+    if a is None or b is None:
+      return False
+
+    if a.val != b.val:
+      return False
+
+    return self.recursively(a.left, b.right) and self.recursively(a.right, b.left)
+
+  def iteratively(self, a, b):
+    if a is None and b is None:
+      return True
+    if a is None or b is None:
+      return False
+
+    astk = [a]
+    bstk = [b]
+    while astk:
+      a = astk.pop(-1)
+      b = bstk.pop(-1)
+      if a.left is None and b.right is None:
+        pass
+      elif a.left is None or b.right is None:
+        return False
+      else:
+        astk.append(a.left)
+        bstk.append(b.right)
+
+      if a.right is None and b.left is None:
+        pass
+      elif a.right is None or b.left is None:
+        return False
+      else:
+        astk.append(a.right)
+        bstk.append(b.left)
+
+    return True
+```
+
+## Create Mirror Tree
+```python
+'''
+Given a tree, return a new tree that is symmetric to the given tree.
+'''
+class NewMirrorTree:
+
+  def recursively(self, root):
+    if root is None:
+      return None
+
+    rootCopy = TreeNode(root.val)
+    rootCopy.left = self.recursively(root.right)
+    rootCopy.right = self.recursively(root.left)
+    return rootCopy
+
+  def iteratively(self, root):
+    if root is None:
+      return None
+
+    rootCopy = TreeNode(root.val)
+
+    stk = [root]
+    stkCopy = [rootCopy]
+    while stk:
+      node = stk.pop(-1)
+      nodeCopy = stkCopy.pop(-1)
+
+      if node.right:
+        rightCopy = TreeNode(node.right.val)
+        nodeCopy.left = rightCopy
+        stk.append(node.right)
+        stkCopy.append(rightCopy)
+
+      if node.left:
+        leftCopy = TreeNode(node.left.val)
+        nodeCopy.right = leftCopy
+        stk.append(node.left)
+        stkCopy.append(leftCopy)
+
+    return rootCopy
 ```
 
 # Advanced
