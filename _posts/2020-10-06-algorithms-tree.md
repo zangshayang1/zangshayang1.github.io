@@ -340,6 +340,100 @@ class NewMirrorTree:
 
 # Advanced
 
+## Lowest Common Ancestor
+```python
+class LowestCommonAncestor:
+
+  '''
+  V1 assumes:
+  1. that every TreeNode has a parent pointer
+  2. that a and b must exist in the given tree
+  '''
+  def v1(self, root, a, b):
+    if root is None:
+      return None
+
+    astk = []
+    while a:
+      astk.append(a)
+      a = a.parent
+
+    bstk = []
+    while b:
+      bstk.append(b)
+      b = b.parent
+
+    lastCommon = None
+    while a and b:
+      a, b = astk.pop(-1), bstk.pop(-1)
+      if a == b:
+        lastCommon = a
+      else:
+        break
+
+    return lastCommon
+
+  '''
+  V2 assumes that a and b must exist in the given tree.
+
+  Otherwise, when only one node exists in the given tree, this algorithms fails to return None.
+  '''
+  def v2(self, root, a, b):
+    if root is None:
+      return None
+
+    if root == a or root == b:
+      return root
+
+    left = self.v2(root.left, a, b)
+    right = self.v2(root.right, a, b)
+
+    if left and right:
+      return root
+    if left:
+      return left
+    if right:
+      return right
+
+    return None
+
+  def v3(self, root, a, b):
+
+    lca, isLca = self._v3_helper(root, a, b)
+    if isLca:
+      return lca
+    else:
+      return None
+
+  def _v3_helper(self, root, a, b):
+    if root is None:
+      return None, False
+
+    left, leftIsLca = self._v3_helper(root.left, a, b)
+    right, rightIsLca = self._v3_helper(root.right, a, b)
+
+    if leftIsLca:
+      return left, leftIsLca
+    if rightIsLca:
+      return right, rightIsLca
+
+    if left and right:
+      return root, True
+
+    # comparing root with A and B must be done in Conquer step
+    # because returned info include if it is an LCA
+    # As long as one of left subtree and right subtree contains a or b, root is LCA
+    if root == A or root == B:
+      return root, left or right
+
+    if left:
+      return left, False
+    if right:
+      return right, False
+
+    return None, False
+```
+
 # Hard
 
 # Resources
@@ -348,6 +442,7 @@ class NewMirrorTree:
 class TreeNode(object):
     def __init__(self, val):
         self.val = val
+        self.parent = None
         self.left = None
         self.right = None
 ```
