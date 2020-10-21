@@ -10,7 +10,7 @@ tag: algorithms
 {:toc}
 
 
-Last Update: 2020-10-13
+Last Update: 2020-10-18
 
 # Basics
 
@@ -338,6 +338,101 @@ class NewMirrorTree:
     return rootCopy
 ```
 
+## BinaryTreeTypes
+```python
+class BinaryTreeTypes:
+  '''
+  A balanced binary tree is height-balanced.
+  '''
+  def isBalancedTree(self, root):
+    if root is None:
+      return False
+
+    isBalanced, _ = self._balanceAndHeight(root)
+    return isBalanced
+
+  def _balanceAndHeight(self, root):
+    if root is None:
+      return True, -1
+
+    leftIsBalanced, leftHeight = self._balanceAndHeight(root.left)
+    rightIsBalanced, rightHeight = self._balanceAndHeight(root.right)
+
+    if leftIsBalanced and rightIsBalanced and abs(leftHeight - rightHeight) <= 1:
+      return True, max(leftHeight, rightHeight) + 1
+    else:
+      return False, max(leftHeight, rightHeight) + 1
+
+  '''
+  In a complete binary tree, every level except the last, is completely filled and
+  all nodes in the last level are as far left as possible.
+
+  The following solution is built on top of the key observation: A complete binary tree
+  can be efficiently represented using an array, meaning there will be 0 space wasted
+  representing NULL node.
+  '''
+  def isCompleteTree(self, root):
+    if root is None:
+      return False
+
+    queue = [root]
+
+    while queue:
+      curr = queue.pop(0)
+      if curr is None:
+        break
+
+      queue.append(curr.left)
+      queue.append(curr.right)
+
+    while queue:
+      if queue.pop(0) is not None:
+        return False
+
+    return True
+
+  '''
+  In a full binary tree, every node has either 0 or 2 children.
+  '''
+  def isFullTree(self, root):
+    if root is None:
+      return False
+
+    if root.left is None and root.right is None:
+      return True
+
+    if root.left is None or root.right is None:
+      return False
+
+    return self.isFullTree(root.left) and self.isFullTree(root.right)
+
+  '''
+  In a degenerate tree, every node has at most 1 child, which is essentially a linked list.
+
+  This problem requires that you make in-place change to a given binary tree and convert it
+  to a degenerate tree with every node only having right child.
+  '''
+  def convertToDegenerateTree(self, root):
+    if root is None:
+      return ;
+
+    # recursion terminates when root is a leaf node
+    self.convertToDegenerateTree(root.left)
+    self.convertToDegenerateTree(root.right)
+
+    tmp = root.right
+    root.right = root.left
+    root.left = None
+
+    while root.right:
+      root = root.right
+
+    root.right = tmp
+
+    return ;
+```
+
+
 # Advanced
 
 ## Lowest Common Ancestor
@@ -397,6 +492,11 @@ class LowestCommonAncestor:
 
     return None
 
+  '''
+  V3 assumes nothing, meaning:
+  1. No parent pointer.
+  2. The given node a and b don't necessarily exist in the given tree.
+  '''
   def v3(self, root, a, b):
 
     lca, isLca = self._v3_helper(root, a, b)
@@ -428,10 +528,16 @@ class LowestCommonAncestor:
 
     if left:
       return left, False
+
     if right:
       return right, False
 
     return None, False
+```
+
+## Boundary Of Binary Tree
+```python
+
 ```
 
 # Hard
