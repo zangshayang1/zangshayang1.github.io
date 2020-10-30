@@ -10,7 +10,7 @@ tag: algorithms
 {:toc}
 
 
-Last Update: 2020-10-18
+Last Update: 2020-10-29
 
 # Basics
 
@@ -136,6 +136,32 @@ class PostorderTraversal:
 
     while stk2:
       print(stk2.pop(-1))
+```
+
+## Level Order Traversal
+```python
+class LevelOrderTraversal:
+
+  def solution(self, root):
+    if root is None:
+      return ;
+
+    currLevel = []
+    nextLevel = [root]
+    while currLevel or nextLevel:
+      if len(currLevel) == 0:
+        currLevel = nextLevel
+        nextLevel = []
+        for node in currLevel:
+          print(node)
+
+      curr = currLevel.pop(0)
+      if curr.left:
+        nextLevel.append(curr.left)
+      if curr.right:
+        nextLevel.append(curr.right)
+
+    return ;
 ```
 
 # Intermedium
@@ -338,7 +364,7 @@ class NewMirrorTree:
     return rootCopy
 ```
 
-## BinaryTreeTypes
+## Binary Tree Types
 ```python
 class BinaryTreeTypes:
   '''
@@ -432,6 +458,50 @@ class BinaryTreeTypes:
     return ;
 ```
 
+## Sum Of Left Leaves
+```python
+'''
+This problem is simple but inspiring. It sheds some light on how information flow
+in a binary tree.
+
+The problem is, given a tree, return the sum of all left leaves value.
+
+The question here is: how does a leaf node know if it is a left leaf?
+
+The solution introduces a way to pass info from parent to child, which is necessary
+to solve this problem because a node itself and its substrees don't know if it is
+a left node or right node.
+
+Meanwhile, parent node doesn't know if its child is a leaf or not. It is determined
+at current node level so that part of info is gathered differently.
+
+However, there are some other cases where the needed info is not going to be complete
+until you traverse through the current node and its substrees. For example,
+# Ref: LowestCommonAncestor.v3 tells how info can be passed in a bottom-up fashion.
+'''
+class SumOfLeftLeaves:
+
+  def solution(self, root):
+    if root is None:
+      return 0
+
+    return self._helper(root.left, True) + self._helper(root.right, False)
+
+  def _helper(self, root, isLeftChild):
+    if root is None:
+      return 0
+
+    if root.left is None and root.right is None and isLeftChild:
+      return root.val
+
+    return self._helper(root.left, True) + self._helper(root.right, False)
+```
+
+// shzang
+## Convert Tree to Lists Horizontally/Vertically
+```python
+
+```
 
 # Advanced
 
@@ -535,11 +605,301 @@ class LowestCommonAncestor:
     return None, False
 ```
 
-## Boundary Of Binary Tree
+## Find Path To Target
 ```python
+'''
+Given a binary tree and a target node, assuming the target node is unique if it exists,
+return the path from root to the target.
 
+NOTE: this problem reveals another solution to LowestCommonAncestor problem in that,
+if the paths to two target nodes are determined, the last common node is the lowest
+common ancestor.
+'''
+class FindPaths:
+
+  '''
+  V1: assuming the target node always exists
+  '''
+  def findPathToTargetV1(self, root, target):
+    path = []
+    self._v1_helper(root, target, path)
+    return path
+
+  def _v1_helper(self, root, target, path):
+    if root is None:
+      return
+
+    if root.val == target.val:  
+      path.append(root)
+      return
+
+    path.append(root)
+    self._v1_helper(root.left, target, path)
+    self._v1_helper(root.right, target, path)
+    return
+
+  '''
+  V2: without the v1 assumption, classic dfs with backtracking.
+  '''
+  def findPathToTargetV2(self, root, target):
+    path = []
+    self._v2_helper(root, target, path)
+    return path
+
+  def _v2_helper(self, root, target, path):
+    if root is None:
+      return False
+
+    if root.val == target.val:
+      path.append(root)
+      return True
+
+    path.append(root)
+    leftFound = self._v2_helper(root.left, target, path)
+    rightFound = self._v2_helper(root.right, target, path)
+
+    if not leftFound and not rightFound:
+      path.pop(-1) # backtracking
+      return False
+    else:
+      return True
+
+  '''
+  Variant: Find Paths To All Leaves
+  '''
+  def findPathsToLeaves(self, root):
+    paths = []
+    self._variant_helper(root, [], paths)
+    return paths
+
+  def _variant_helper(self, root, path, paths):
+    if root is None:
+      return ;
+
+    if root.left is None and root.right is None:
+      path.append(root)
+      paths.append(path)
+      return ;
+
+    path.append(root)
+    self._variant_helper(root.left, path, paths)
+    self._variant_helper(root.right, path, paths)
+
+    return ;
 ```
 
+## Boundary Of Binary Tree
+```python
+'''
+A very interesting problem. Given a binary tree, return its nodes on the boundaries
+in the order of left boundary, leave boundary and right boundary, counter-clock wise.
+NOTE: No duplicate (root, leftmost node, rightmost node) allowed in the returned result.
+
+To further define left/right boundary:
+1. If root does have left/right child, its left/right boundary is defined
+as a path from the root to the leftmost/rightmost node.
+2. If root does not have left/right child, its left/right boundary is defined
+as the root node only.
+'''
+class BinaryTreeBoundaries:
+
+  def solution(self, root):
+    if root is None:
+      return []
+
+    # handle single-node tree
+    singleNodeBoundary = [root]
+
+    # all _collectFunc() below return [] when there is no substree
+    leftBoundary = self._collectLeft(root.left)
+    rightBoundary = self._collectRight(root.right)
+    leftLeaves = self._collectLeaves(root.left)
+    rightLeaves = self._collectLeaves(root.right)
+
+    # python in-place reverse
+    rightBoundary.reverse()
+
+    boundaries = singleNodeBoundary + leftBoundary[:-1] + leftLeaves + rightLeaves + rightBoundary[1:]
+
+    return [node.val for node in boundaries]
+
+  def _collectLeft(self, root):
+    left = []
+
+    while root:
+      left.append(root)
+      # keep appending the left child till there is no left child
+      if root.left:
+        root = root.left
+        continue
+      # if there is no right child, you've reached the leftmost leaf
+      # otherwise, switch to its right child and start explore left subtree again
+      root = root.right
+
+    return left
+
+  def _collectRight(self, root):
+    right = []
+
+    while root:
+      right.append(root)
+
+      if root.right:
+        root = root.right
+        continue
+
+      root = root.left
+
+    return right
+
+  def _collectLeaves(self, root):
+    if root is None:
+      return []
+
+    if root.left is None and root.right is None:
+      return [root]
+
+    left = self._collectLeaves(root.left)
+    right = self._collectLeaves(root.right)
+
+    return left + right
+
+  def _collectLeavesIteratively(self, root):
+    if root is None:
+      return []
+
+    leaves = []
+    stk = [root]
+    # Preorder traversal
+    while stk:
+      curr = stk.pop(-1)
+      if curr.left is None and curr.right is None:
+        leaves.append(curr)
+      if curr.right:
+        stk.append(curr.right)
+      if curr.left:
+        stk.append(curr.left)
+
+    return leaves
+```
+
+## Diameter of Binary Tree
+```python
+'''
+Diameter of a tree is the maximum distance between any two nodes in the tree.
+The two nodes are either:
+1. both in the left subtree
+2. both in the right subtree
+3. one in the left subtree and another in the right subtree
+'''
+class BinaryTreeDiameter:
+
+  def solution(self, root):
+    return max(self.helper(root)) - 1
+
+  '''
+  For the following helper() function:
+  The first returned value is the diameter of the root tree.
+  The second returned value is the height of the root tree.
+  '''
+  def helper(self, root):
+    # A single node tree has diameter 0 and height 0
+    if root is None:
+      return -1, -1
+
+    leftMaxDist, leftHeight = self.helper(root.left)
+    rightMaxDist, rightHeight = self.helper(root.right)
+
+    rootMaxDist = leftHeight + rightHeight + 2
+    rootHeight = max(leftHeight, rightHeight) + 1
+
+    return max(leftMaxDist, rightMaxDist, rootMaxDist), rootHeight
+```
+
+## Maximum Path Sum
+```python
+class MaximumPathSum:
+
+  def fromRootToAnyAllPositive(self, root):
+    if root is None:
+      return 0
+
+    left = self.fromRootToAnyAllPositive(root.left)
+    right = self.fromRootToAnyAllPositive(root.right)
+    return max(left, right) + root.val
+
+  def fromRootToAnyWithNegative(self, root):
+    if root is None:
+      return 0
+
+    left = self.fromRootToAnyWithNegative(root.left)
+    right = self.fromRootToAnyWithNegative(root.right)
+    return max(left, right, 0) + root.val
+
+  def fromAnyToAnyAllPositive(self, root):
+    return self.helper1(root)[0]
+
+  '''
+  The first returned value is the any-to-any maximum path sum
+  The second returned value is the root-to-any maximum path sum
+  '''
+  def helper1(self, root):
+    if root is None:
+      return 0, 0
+
+    leftAA, leftRA = self.helper1(root.left)
+    rightAA, rightRA = self.helper1(root.right)
+
+    rootAA = max(leftAA, rightAA, leftRA + rightRA + root.val)
+    rootRA = max(leftRA, rightRA) + root.val
+
+    return rootAA, rootRA
+
+  def fromAnyToAnyWithNegative(self, root):
+    if root is None:
+      return 0
+
+    return self.helper2(root)[0]
+
+  def helper2(self, root):
+    if root is None:
+      return - 2**32, - 2**32
+
+    leftAA, leftRA = self.helper2(root.left)
+    rightAA, rightRA = self.helper2(root.right)
+
+    rootAA = max(leftAA, rightAA, max(leftRA, 0) + max(rightRA, 0) + root.val)
+    rootRA = max(max(leftRA, 0), max(rightRA, 0)) + root.val
+
+    return rootAA, rootRA
+```
+
+## Construct Binary Tree From Preorder and Inorder Sequence
+```python
+class ConstructFromSequences:
+
+  def solution(self, preorder, inorder):
+
+    assert len(preorder) == len(inorder)
+
+    if len(preorder) == 0:
+      return None
+
+    rootVal = preorder[0]
+    root = TreeNode(rootVal)
+    i = inorder.index(rootVal)
+
+    leftInorder = inorder[:i]
+    rightInorder = inorder[i+1:]
+
+    leftPreorder = preorder[1: i+1]
+    rightPreorder = preorder[i+1:]
+
+    root.left = self.solution(leftPreorder, leftInorder)
+    root.right = self.solution(rightPreorder, rightInorder)
+
+    return root
+```
 # Hard
 
 # Resources
