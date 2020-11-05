@@ -10,7 +10,7 @@ tag: algorithms
 {:toc}
 
 
-Last Update: 2020-10-29
+Last Update: 2020-11-04
 
 # Basics
 
@@ -497,10 +497,98 @@ class SumOfLeftLeaves:
     return self._helper(root.left, True) + self._helper(root.right, False)
 ```
 
-// shzang
-## Convert Tree to Lists Horizontally/Vertically
+## Convert Tree to 2D Array Horizontally/Vertically
 ```python
+class ConvertTreeTo2DArray:
 
+  '''
+  Basically level order traversal.
+  Iterative solution can be found # Ref: LevelOrderTraversal
+  The below recursive solution can be expanded to "vertical" version.
+  Essentially, iterative -> BFS, recursive -> DFS.
+  '''
+  def horizontally(self, root):
+    arrays = []
+    self._horizontal_helper(root, 0, arrays)
+    return arrays
+
+  def _horizontal_helper(self, root, level, arrays):
+    if root is None:
+      return None
+
+    if len(arrays) == level:
+      arrays.append([])
+
+    currList = arrays[level]
+    currList.append(root.val)
+    self._horizontal_helper(root.left, level + 1, arrays)
+    self._horizontal_helper(root.right, level + 1, arrays)
+    return ;
+
+  '''
+  Sort of binary tree vertical traversal.
+
+  Two hints:
+  1. Use dictionary/map to store KV<column, List<TreeNode>> because column variable
+  doesn't always increment.
+  2. In a DFS solution, maintain a variable to store node depth because final result
+  require top down vertical order but DFS doesn't go in that order.
+  '''
+  def vertically_recursively(self, root):
+    map = {}
+    self._vertical_recursive_helper(root, 0, 0, map)
+
+    arrays = []
+    for column in sorted(map):
+      # sort by depth
+      sorted_list_of_val_depth_pairs = sorted(map[column], key = lambda x: x[1])
+      arrays.append([v for v, d in sorted_list_of_val_depth_pairs])
+
+    return arrays
+
+  def _vertical_recursive_helper(self, root, column, depth, map):
+    if root is None:
+      return None
+
+    if column not in map:
+      map[column] = []
+
+    map[column].append((root.val, depth))
+    self._vertical_recursive_helper(root.left, column - 1, depth + 1, map)
+    self._vertical_recursive_helper(root.right, column + 1, depth + 1, map)
+    return ;
+
+  '''
+  Vertical traversal iterative solution is easier to understand.
+  '''
+  def vertically_iteratively(self, root):
+    if root is None:
+      return []
+
+    adict = {}
+    currLevel = [(root, 0)]
+    nextLevel = []
+    while currLevel or nextLevel:
+      if not currLevel:
+        currLevel = nextLevel
+        nextLevel = []
+
+      node, column = currLevel.pop(0)
+      if column not in adict:
+        adict[column] = []
+
+      adict[column].append(node.val)
+
+      if node.left:
+        nextLevel.append((node.left, column - 1))
+      if node.right:
+        nextLevel.append((node.right, column + 1))
+
+    arrays = []
+    for column in sorted(adict):
+      arrays.append(adict[column])
+
+    return arrays
 ```
 
 # Advanced
