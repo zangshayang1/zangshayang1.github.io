@@ -10,7 +10,7 @@ tag: algorithms
 {:toc}
 
 
-Last Update: 2020-11-04
+Last Update: 2020-11-12
 
 # Basics
 
@@ -418,6 +418,32 @@ class BinaryTreeTypes:
     return True
 
   '''
+  A perfect tree is a complete tree where the last level is completely filled.
+  '''
+  def isPerfectTree(self, root):
+    if root is None:
+      return False
+
+    counter = 1
+    currLevel = []
+    nextLevel = [root]
+    while currLevel or nextLevel:
+      if not currLevel:
+        if len(nextLevel) != counter:
+          return False
+        currLevel = nextLevel
+        nextLevel = []
+        counter = 2 * counter
+
+      node = currLevel.pop(0)
+      if node.left:
+        nextLevel.append(node.left)
+      if node.right:
+        nextLevel.append(node.right)
+
+    return True
+
+  '''
   In a full binary tree, every node has either 0 or 2 children.
   '''
   def isFullTree(self, root):
@@ -456,6 +482,33 @@ class BinaryTreeTypes:
     root.right = tmp
 
     return ;
+
+  '''
+  A binary search tree satisfies:
+  1. From the root, the left subtree is a binary search tree and the maximum value
+  from left subtree is smaller than root value.
+  2. From the root, the right subtree is a binary search tree and the minimum value
+  from right subtree is greater than root value.
+  '''
+  def isBinarySearchTree(self, root):
+    if root is None:
+      return False
+
+    isBst, _, _ = self._isBstHelper(root)
+    return isBst
+
+  def _isBstHelper(self, root):
+    if root is None:
+      # base case, return isBst=True, minVal=2^31-1, maxVal=-2^31
+      return True, 2**31-1, -2**31
+
+    leftIsBst, leftMin, leftMax = self._isBstHelper(root.left)
+    rightIsBst, rightMin, rightMax = self._isBstHelper(root.right)
+
+    if leftIsBst and rightIsBst and leftMax < root.val and rightMin > root.val:
+      return True, min(root.val, leftMin), max(root.val, rightMax)
+    else:
+      return False, -1, -1
 ```
 
 ## Sum Of Left Leaves
@@ -495,100 +548,6 @@ class SumOfLeftLeaves:
       return root.val
 
     return self._helper(root.left, True) + self._helper(root.right, False)
-```
-
-## Convert Tree to 2D Array Horizontally/Vertically
-```python
-class ConvertTreeTo2DArray:
-
-  '''
-  Basically level order traversal.
-  Iterative solution can be found # Ref: LevelOrderTraversal
-  The below recursive solution can be expanded to "vertical" version.
-  Essentially, iterative -> BFS, recursive -> DFS.
-  '''
-  def horizontally(self, root):
-    arrays = []
-    self._horizontal_helper(root, 0, arrays)
-    return arrays
-
-  def _horizontal_helper(self, root, level, arrays):
-    if root is None:
-      return None
-
-    if len(arrays) == level:
-      arrays.append([])
-
-    currList = arrays[level]
-    currList.append(root.val)
-    self._horizontal_helper(root.left, level + 1, arrays)
-    self._horizontal_helper(root.right, level + 1, arrays)
-    return ;
-
-  '''
-  Sort of binary tree vertical traversal.
-
-  Two hints:
-  1. Use dictionary/map to store KV<column, List<TreeNode>> because column variable
-  doesn't always increment.
-  2. In a DFS solution, maintain a variable to store node depth because final result
-  require top down vertical order but DFS doesn't go in that order.
-  '''
-  def vertically_recursively(self, root):
-    map = {}
-    self._vertical_recursive_helper(root, 0, 0, map)
-
-    arrays = []
-    for column in sorted(map):
-      # sort by depth
-      sorted_list_of_val_depth_pairs = sorted(map[column], key = lambda x: x[1])
-      arrays.append([v for v, d in sorted_list_of_val_depth_pairs])
-
-    return arrays
-
-  def _vertical_recursive_helper(self, root, column, depth, map):
-    if root is None:
-      return None
-
-    if column not in map:
-      map[column] = []
-
-    map[column].append((root.val, depth))
-    self._vertical_recursive_helper(root.left, column - 1, depth + 1, map)
-    self._vertical_recursive_helper(root.right, column + 1, depth + 1, map)
-    return ;
-
-  '''
-  Vertical traversal iterative solution is easier to understand.
-  '''
-  def vertically_iteratively(self, root):
-    if root is None:
-      return []
-
-    adict = {}
-    currLevel = [(root, 0)]
-    nextLevel = []
-    while currLevel or nextLevel:
-      if not currLevel:
-        currLevel = nextLevel
-        nextLevel = []
-
-      node, column = currLevel.pop(0)
-      if column not in adict:
-        adict[column] = []
-
-      adict[column].append(node.val)
-
-      if node.left:
-        nextLevel.append((node.left, column - 1))
-      if node.right:
-        nextLevel.append((node.right, column + 1))
-
-    arrays = []
-    for column in sorted(adict):
-      arrays.append(adict[column])
-
-    return arrays
 ```
 
 # Advanced
@@ -988,6 +947,155 @@ class ConstructFromSequences:
 
     return root
 ```
+
+## Convert Tree To 2D Array Horizontally/Vertically
+```python
+class ConvertTreeTo2DArray:
+
+  '''
+  Basically level order traversal.
+  Iterative solution can be found # Ref: LevelOrderTraversal
+  The below recursive solution can be expanded to "vertical" version.
+  Essentially, iterative -> BFS, recursive -> DFS.
+  '''
+  def horizontally(self, root):
+    arrays = []
+    self._horizontal_helper(root, 0, arrays)
+    return arrays
+
+  def _horizontal_helper(self, root, level, arrays):
+    if root is None:
+      return None
+
+    if len(arrays) == level:
+      arrays.append([])
+
+    currList = arrays[level]
+    currList.append(root.val)
+    self._horizontal_helper(root.left, level + 1, arrays)
+    self._horizontal_helper(root.right, level + 1, arrays)
+    return ;
+
+  '''
+  Sort of binary tree vertical traversal.
+
+  Two hints:
+  1. Use dictionary/map to store KV<column, List<TreeNode>> because column variable
+  doesn't always increment.
+  2. In a DFS solution, maintain a variable to store node depth because final result
+  require top down vertical order but DFS doesn't go in that order.
+  '''
+  def vertically_recursively(self, root):
+    map = {}
+    self._vertical_recursive_helper(root, 0, 0, map)
+
+    arrays = []
+    for column in sorted(map):
+      # sort by depth
+      sorted_list_of_val_depth_pairs = sorted(map[column], key = lambda x: x[1])
+      arrays.append([v for v, d in sorted_list_of_val_depth_pairs])
+
+    return arrays
+
+  def _vertical_recursive_helper(self, root, column, depth, map):
+    if root is None:
+      return None
+
+    if column not in map:
+      map[column] = []
+
+    map[column].append((root.val, depth))
+    self._vertical_recursive_helper(root.left, column - 1, depth + 1, map)
+    self._vertical_recursive_helper(root.right, column + 1, depth + 1, map)
+    return ;
+
+  '''
+  Vertical traversal iterative solution is easier to understand.
+  '''
+  def vertically_iteratively(self, root):
+    if root is None:
+      return []
+
+    adict = {}
+    currLevel = [(root, 0)]
+    nextLevel = []
+    while currLevel or nextLevel:
+      if not currLevel:
+        currLevel = nextLevel
+        nextLevel = []
+
+      node, column = currLevel.pop(0)
+      if column not in adict:
+        adict[column] = []
+
+      adict[column].append(node.val)
+
+      if node.left:
+        nextLevel.append((node.left, column - 1))
+      if node.right:
+        nextLevel.append((node.right, column + 1))
+
+    arrays = []
+    for column in sorted(adict):
+      arrays.append(adict[column])
+
+    return arrays
+```
+
+## Longest Consecutive Sequence
+```python
+'''
+From any parent node to any child node, find the length of the longest path
+where node values are consecutive numbers, ascending.
+
+Input:
+   1
+    \
+     3
+    / \
+   2   4
+        \
+         5
+Output:
+3
+'''
+class LongestConsecutiveSequence:
+
+  def solution(self, root):
+
+    _, g, _ = self._helper(root)
+
+    return g
+
+  '''
+  The helper function returns local_max, global_max, node_val of current node
+  and its subtrees.
+  '''
+  def _helper(self, root):
+
+    if root is None:
+      return 0, 0, None
+
+    ll, lg, lv = self._helper(root.left)
+    rl, rg, rv = self._helper(root.right)
+
+    if lv == root.val + 1: # update left_local if root.val is a consecutive number to last left_value
+      ll += 1
+    else: # else start counting the current root as the first of a new sequence
+      ll = 1
+
+    if rv == root.val + 1:
+      rl += 1
+    else:
+      rl = 1
+
+    lg = max(ll, lg) # update left_global with new left_local
+    rg = max(rl, rg)
+
+    return max(ll, rl), max(lg, rg), root.val
+
+```
+
 # Hard
 
 # Resources
