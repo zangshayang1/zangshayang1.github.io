@@ -10,6 +10,8 @@ tag: algorithms
 {:toc}
 
 
+Last Update: 2020-11-23
+
 ## Binary Search Template
 ```python
 class BinarySearchTemplate:
@@ -22,7 +24,7 @@ class BinarySearchTemplate:
 
     while s + 1 < e: # classic termination condition
 
-      m = s + (e - s) # 2 # prevent INT_MAX overflow
+      m = s + (e - s) // 2 # prevent INT_MAX overflow
 
       if t = A[m]:
         return m
