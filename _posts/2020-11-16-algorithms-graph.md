@@ -10,7 +10,7 @@ tag: algorithms
 {:toc}
 
 
-Last Update: 2020-11-16
+Last Update: 2020-12-30
 
 # Text Book
 
@@ -24,7 +24,7 @@ class PrimsOnMST:
 
   This implementation of Prim's is in O(V^2) complexicity.
   '''
-  def adjacencyMatrix(self, G):
+  def solutionOnAdjacencyMatrixRepresentedGraph(self, G):
     nov = len(G) # number of vertices
     V = [False for _ in range(nov)] # mark vertices that are reached in the MST
     P = [-1 for _ in range(nov)] # mark parent vertices that are in the MST
@@ -78,7 +78,7 @@ class DijkstrasOnSSSP:
 
   This implementation of Dijkstras gives (E + V)logV complexicity.
   '''
-  def adjacencyList(self, s, G):
+  def solutionOnAdjacencyListRepresentedGraph(self, s, G):
     nov = len(G) # number of vertices
     V = [False for _ in range(nov)] # mark vertices that are reached in the SSSP
     P = [-1 for _ in range(nov)] # mark the parent vertices that are in the SSSP
@@ -94,12 +94,9 @@ class DijkstrasOnSSSP:
     pq.push((s, 0))
     D[s] = 0
 
-    while True:
+    while pq:
       s, w = pq.pop() # pop() V times -> VlogV
       V[s] = True
-
-      if sum(V) == nov: # visited every node in the graph
-        break
 
       for t, w in G[s]:
         if V[t]:
@@ -108,6 +105,40 @@ class DijkstrasOnSSSP:
           D[t] = D[s] + w
           P[t] = s
           pq.push((t, D[t])) # push E times -> ElogV
+
+    return sum(D)
+```
+
+## BellmanFord's On SSSP
+```python
+class BellmanFordsOnSSSP:
+
+  '''
+  SSSP: Single source shortest path to all nodes in a graph.
+
+  Use List<Edge> E to represent a graph in a SSSP problem.
+
+  This implementation of BellmanFord gives O(E * V) complexicity.
+
+  Strength: BellmanFord's can detect negative cycles.
+  '''
+  def solutionOnEdgeRepresentedGraph(self, s, E):
+    vertices = set([e.s for e in E] + [e.t for e in E])
+    nov = len(vertices) # number of vertices in this graph
+
+    D = [Constant.INT_MAX for _ in range(nov)] # Track shortest distance for each node
+    P = [-1 for _ in range(nov)] # Track previous node for each node
+    D[s] = 0
+
+    for _ in range(nov - 1): # loop through all edges for V-1 times to fill the D
+      for e in E:
+        if D[e.s] + e.w < D[e.t]:
+          D[e.t] = D[e.s] + e.w
+          P[e.t] = e.s
+
+    for e in E:
+      if D[e.s] + e.w < D[e.t]:
+        return -1 # negative cycle detected
 
     return sum(D)
 ```
@@ -123,7 +154,7 @@ class KruskalsOnMST:
 
   This implementation of Kruskal's gives O(ElogE) complexicity.
   '''
-  def basedOnEdges(self, E, N):
+  def solutionOnEdgeRepresentedGraph(self, E, N):
 
     E = sorted(E, lambda x : x.w)
 
@@ -288,6 +319,133 @@ class MakeNetworkConnected:
       self._dfs(G, j, V)
 
     return 1
+```
+
+## Cheapest Flights Within K Stops
+```python
+'''
+Given a list of edges E = [(0, 1, 100), (1, 2, 100), (0, 2, 400)...]
+Given a source node and a destination node and allowed number of stops K.
+Given total number of vertices n.
+
+Return the minimum cost of traveling from source to destination within K stops.
+Return -1 when no such route is available.
+'''
+class CheapestFlightsWithinKStops:
+
+  def dijkstraVariantOnHeap(self, n, src, dst, E, k):
+    G = collections.defaultdict(list)
+    for e in E:
+      G[e.s].append((e.t, e.w))
+
+    minHeap = MinPriorityQueue(lambda x : x[1])
+    minHeap.push((src, 0, k + 1))
+
+    while minHeap:
+      i, c, k = minHeap.pop()
+      if k < 0:
+        continue
+
+      if i == dst:
+        return c
+
+      for j, jc in G[i]:
+        minHeap.push((j, c + jc, k - 1))
+
+    return -1
+
+  def bellmanFordVariant(self, n, src, dst, E, k):
+    # create a 2D matrix with (k+1) rows and n columns
+    # dp[i][j]: the cheapest price from src to j using at most i stops (including landing at j)
+    dp [[Constant.INT_MAX for _ in range(n + 1)] for _ in range(k + 2)]
+
+    # no landing possible when 0 stop is allowed except src
+    # (just for illustration purpose, this step is not necessary)
+    for j in range(n + 1):
+      dp[0][j] = Constant.INT_MAX
+
+    # landing at src always costs 0
+    for i in range(k + 2):
+      dp[i][src] = 0
+
+    for i in range(1, k + 2):
+      for e in E:
+        # with an edge from e.s to e.t at cost e.w
+        # if landing at e.s using at most (i-1) stops is possible
+        # landing at e.t using at most i stops is certainly doable at cost (dp[i-1][e.s] + e.w)
+        if dp[i - 1][e.s] != Constant.INT_MAX:
+          dp[i][e.t] = min(dp[i][e.t], dp[i - 1][e.s] + e.w)
+
+    if dp[k + 1][dst] == Constant.INT_MAX:
+      return -1
+    else:
+      return dp[k + 1][dst]
+
+  def dfsWithPrune(self, n, src, dst, E, k):
+    G = collections.defaultdict(list)
+    for e in E:
+      G[e.s].append((e.t, e.w))
+
+    # a list to store local answers, also used for pruning
+    cheapest = [Constant.INT_MAX]
+
+    visited = [False for _ in range(n)] # prevent going into a circle
+    self._dfsHelper(G, src, dst, k + 1, 0, visited, cheapest)
+
+    if cheapest[-1] == Constant.INT_MAX:
+      return -1
+    else:
+      return cheapest[-1]
+
+  def _dfsHelper(self, G, curr, dst, k, w, visited, cheapest):
+    if k < 0: return # definition of k: allowed stops including landing at dst
+
+    if curr == dst:
+      cheapest.append(w) # definition of w: total cost from src to curr
+      return
+
+    visited[curr] = True
+
+    for j, jw in G[curr]:
+      if visited[j]:
+        continue # prevent going into a circle
+      if w + jw > cheapest[-1]:
+        continue # why bother taking a step further if the cost is already high
+
+      self._dfsHelper(G, j, dst, k - 1, w + jw, visited, cheapest)
+
+    # erase the record that this node has been visited so that
+    # it can be visited again from a different route with lower cost or fewer stops
+    visited[curr] = False
+
+  def bfsWithPrune(self, n, src, dst, E, k):
+    G = collections.defaultdict(list)
+    for e in E:
+      G[e.s].append((e.t, e.w))
+
+    # a list to store the local answers to the shortest path problem from src
+    shortest = [Constant.INT_MAX for _ in range(n)]
+    Q = [(src, k + 1, 0)]
+    while Q:
+      curr, k, w = Q.pop(0)
+
+      if k < 0: continue # if it's not allowed to stop, cut it out.
+
+      shortest[curr] = min(shortest[curr], w) # record the shortest path to curr
+
+      if curr == dst: continue # stop going further if it's already dst
+
+      for j, jw in G[curr]:
+        if w + jw > shortest[j]:
+          continue # why bother taking a step further if the cost is already high
+        Q.append((j, k - 1, w + jw))
+
+    if shortest[dst] == Constant.INT_MAX:
+      return -1
+    else:
+      return shortest[dst]
+
+
 ```
 
 # Resource

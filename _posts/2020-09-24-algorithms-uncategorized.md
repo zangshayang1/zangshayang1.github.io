@@ -10,6 +10,85 @@ tag: algorithms
 {:toc}
 
 
+
+Last Update: 2021-01-06
+
+# Chars/Strings/Bits/Bytes
+
+## Is A The Permutation Of B
+```python
+'''
+Given two strings A and B.
+Check if one is the permutation of the other.
+'''
+class IsPermutation:
+  def solution(self, A, B):
+    if len(A) != len(B):
+      return False
+
+    # Assume the given chars are in ext. Ascii table.
+    # One can bucket chars into an array, which is faster than using HashMap.
+    array = [0 for _ in range(256)]
+    for a in A:
+      array[ord(a)] += 1
+    for b in B:
+      array[ord(b)] += 1
+
+    for i in range(256):
+      if array[i] != 0:
+        return False
+
+    return True
+```
+
+## Is A The Rotation Of B
+```python
+'''
+Given two strings A and B.
+Check if one is the rotation of the other.
+
+For example: A = waterbottle, B = erbottlewat, return true;
+'''
+class IsRotation:
+  def solution(self, A, B):
+    # Most straightforward solution is to move the first char in A to the last,
+    # one by one, and see if any of the transformation results in B.
+
+    # Now I present an inspiring solution:
+    # When a flat list repeats itself, it makes a cycle.
+    return _isSubstr(A, B + B)
+
+  '''
+  A good test case is:
+    string = "mississippi"
+    sub = "issip"
+  '''
+  def _isSubstr(self, sub, string):
+    if sub == "":
+      return True
+
+    if len(sub) > len(string):
+      return False
+
+    # classic two pointers
+    i, j = 0, 0
+    while i < len(string) and j < len(sub):
+      if string[i] != sub[j]:
+        i += 1
+        continue
+      # find a match of the first char of sub in string
+      while j < len(sub) and i + j < len(string) and sub[j] == string[i + j]:
+        j += 1
+      if j == len(sub):
+        return True
+      else:
+        # restart to match the next char in string with the first char in sub.
+        i += 1
+        j = 0
+
+    return False
+```
+
 # Find Kth In Matrix
 
 ## Square Matrix In Spiral Order
