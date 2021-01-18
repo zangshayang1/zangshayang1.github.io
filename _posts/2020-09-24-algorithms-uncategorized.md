@@ -11,7 +11,32 @@ tag: algorithms
 
 
 
-Last Update: 2021-01-06
+Last Update: 2021-01-17
+
+# Numbers
+
+## Count Primes
+```python
+'''
+Given integer n, return the number of primes that are less than n.
+'''
+class CountPrimes:
+  def sieves(n):
+    if n < 2: return 0
+
+    primes = [True for _ in range(n)]
+    primes[0], primes[1] = False, False
+    counter = 0
+    for i in range(2, n):
+      if primes[i]:
+        counter += 1
+        j = i
+        while j * i < n:
+          primes[j * i] = False
+          j += 1
+
+    return counter
+```
 
 # Chars/Strings/Bits/Bytes
 
@@ -198,6 +223,38 @@ class KthSmallestInSortedMatrix:
       k -= 1
 
     return pq.pop()[2]
+```
+
+## Matrix Rotation
+```python
+'''
+Given a square matrix, rotate it 90 degrees.
+
+A brain teaser.
+'''
+class MatrixRotation:
+  def solution(self, M):
+    l = len(M)
+    m = l // 2
+
+    while m > 0:
+      i = l // 2 - m
+
+      for j in range(i, l - 1 - i):
+        top_left_i, top_left_j = i, j
+        bottom_left_i, bottom_left_j = l-1-j, i
+        bottom_right_i, bottom_right_j = l-1-i, l-1-j
+        top_right_i, top_right_j = j, l-1-i
+
+        tmp = M[top_left_i][top_left_j]
+        M[top_left_i][top_left_j] = M[bottom_left_i][bottom_left_j]
+        M[bottom_left_i][bottom_left_j] = M[bottom_right_i][bottom_right_j]
+        M[bottom_right_i][bottom_right_j] = M[top_right_i][top_right_j]
+        M[top_right_i][top_right_j] = tmp
+
+      m -= 1
+
+    return M
 ```
 
 # Merge intervals
@@ -448,6 +505,176 @@ class BestMeetingPointUnsorted:
     assert len(nums) > 0
 
     return findMedian(nums, 0, len(nums) - 1, len(nums) // 2)
+```
+
+# Best Time To Trade Stock
+
+## Best Time To Trade Stock
+```python
+class BestTimeToTradeStock():
+
+    '''
+    Buy and sell only 1 time.
+
+    Goal is to maximize profit.
+    '''
+    def oneBuySell(self, prices):
+        # sanity check
+        if len(prices) < 2: return 0
+        # init
+        local_max_profit, global_max_profit = 0, 0
+        buy_low_price = prices[0]
+
+        for i in range(1, len(prices)):
+          if prices[i] < buy_low_price:
+            # update buying price as it goes down
+            buy_low_price = prices[i]
+          else:
+            # make local profit as it goes up
+            local_max_profit = prices[i] - buy_low_price
+
+          # update global profit
+          global_max_profit = max(global_max_profit, local_max_profit)
+
+        return global_max_profit
+
+    '''
+    Buy and sell as many times as you want.
+
+    Goal is to maximize profit.
+    '''
+    def multipleBuySell(self, prices):
+      # sanity check
+      if len(prices) < 2: return 0
+      # the problem became simpler when one can buy as many times as possible
+      max_profit = 0
+      i = 1
+      while i < len(prices):
+        # as long as prices keep going up, always buy in at previous and sell at today
+        if prices[i] > prices[i - 1]:
+          max_profit += prices[i] - prices[i - 1]
+          i += 1
+        # else, skip today and start looking at from the next day
+        else:
+          i += 1
+
+      return max_profit
+
+    '''
+    Buy and sell as many times as you want with a transaction fee.
+
+    Goal is to maximize profit.
+    '''
+    def multipleBuySellWithFee(self, prices, fee):
+      # sanity check
+      if len(prices) < 2: return 0
+      # Walk through the following logic with input [1, 4, 2, 10]
+      max_profit, min_cost = 0, prices[0]
+      i = 1
+      while i < len(prices):
+        if prices[i] < min_cost:
+          # update min_cost
+          min_cost = prices[i]
+        elif prices[i] > min_cost + fee:
+          # accumulate profit when applicable
+          max_profit += prices[i] - (min_cost + fee) # max_profit = 4 - (1 + 2)
+          # adjust min_cost to be last sale price with a credit that will
+          # only be realized when a future transaction is made
+          min_cost = prices[i] - fee # min_cost = 4 - 2
+        else:
+          continue
+
+          # if the next price is 2, 3, 4
+          #   max_profit will not increase
+          #   min_cost will not change
+          #   just pass to 10 and then
+          #     max_profit = [4 - (1 + 2)] + [10 - ((4 - 2) + 2)] = 7
+          #     same as one transaction: (prices[3] - prices[0] - fee)
+          # if the next price is 5... (6, 7, 8, 9)
+          #   max_profit = [4 - (1 + 2)] + [5 - (2 + 2)] = 2
+          #   min_cost = 5 - 2 = 3
+          #   when it comes to 10
+          #     max_profit = 2 + [10 - ((5 - 2) + 2)] = 7
+          #     same as above
+          # if the next price is 1 however
+          #   min_cost will get updated to 1 (as 1 < 2)
+          #   and when it comes to 10
+          #     max_profit = [4 - (1 + 2)] + [10 - (1 + 2)] = 8
+          #     finally the two transactions makes more than (prices[3] - prices[0] - fee)
+
+    '''
+    Two chances to buy and sell. One at a time.
+
+    Goal is to maximize profit.
+    '''
+    def twoBuySell(self, prices):
+      # sanity check
+      if len(prices) < 2: return 0
+
+      # tracks max profit from left to right
+      left = [0 for _ in range(prices)]
+      # tracks max profit from right to left
+      right = [0 for _ in range(prices)]
+
+      valley, peak = prices[0], prices[-1]
+
+      # the following dp is essentially the same thing
+      # as # Ref: BestTimeToTradeStock.oneBuySell()
+      for i in range(1, len(prices)):
+        valley = min(valley, prices[i])
+        left[i] = max(left[i - 1], prices[i] - valley) # buy at valley, sell at i
+
+      for i in range(len(prices) - 2, -1, -1):
+        peak = max(peak, prices[i])
+        right[i] = max(right[i + 1], peak - prices[i]) # buy at i, sell at peak
+
+      # Why Coming From Two Ends?
+      # So that at any point i, left[i] covers max_profit before i
+      # and right[i] covers max_profit beyond i
+
+      max_profit = 0
+      for i in range(len(prices)):
+        max_profit = max(max_profit, left[i] + right[i])
+
+      return max_profit
+
+      '''
+      K buy and sells are allowed.
+
+      Goal is to maximize the profit.
+      '''
+      def kBuySell(self, prices, k):
+        # the way to solve the problem is to provide a profit chart
+        # where chart[i][j] is the profit when making j transactions by (i+1) day
+        # and chart[len(prices)][k] is the profit when making k transactions throughout the stock trading days
+        # now the problem is how to compute chart[i][j]
+        # the max profit made by conducting j transactions over prices[0:i+1] = one the bigger value of the following two:
+        # 1. the max profit made by conducting j transactions over prices[0:i], chart[i-1][j]
+        # 2. the max profit made by conducting j-th transaction on day i, local_chart[i][j], which is one of the bigger values of the following two:
+        # 2.1 the max profit made by conducting j-th transaction on day i-1 plus the price diff between day i and day i-1, local_chart[i-1][j]+ prices[i]-prices[i-1] (move sell day from i-1 to i)
+        # 2.2 the max profit made by combining the current global max profit chart[i-1][j-1] plus the profit made by (buying at day i-1 selling at day i if prices[i]-prices[i-1]>0) or (buying at the same day i if prices[i]-prices[i-1]<=0)        
+        if len(prices) < 2: return 0
+
+        # when you can buy and sell as many times as you want
+        if k >= len(prices): return self.multipleBuySell(prices)
+
+        m = len(prices)
+        # localmax[i][j] denotes the profit of da   y i when making j transactions with the last transaction being made on day i
+        localmax = [[0 for _ in range(k + 1)] for _ in range(m)]
+        # globalmax[i][j] denotes the profit of day i when making j trasactions without the last transaction necessarily being made on day i
+        globalmax = [[0 for _ in range(k + 1)] for _ in range(m)]
+
+        for i in range(1, m):
+          diff = prices[i] - prices[i - 1]
+          for j in range(1, k + 1):
+            # current localmax = max(the globalmax ending yesterday with j-1 transactions + today's profit if any
+            #                        the localmax ending yesterday with j transactions + today's gain or loss)
+            localmax[i][j] = max(globalmax[i - 1][j - 1] + max(diff, 0), localmax[i - 1][j] + diff)
+            # current globalmax = max(the globalmax ending yesterday with the same amount of transactions made,
+            #                         the current localmax)
+            globalmax[i][j] = max(globalmax[i - 1][j], localmax[i][j])
+
+        return globalmax[m-1][k]
 ```
 
 # Resources

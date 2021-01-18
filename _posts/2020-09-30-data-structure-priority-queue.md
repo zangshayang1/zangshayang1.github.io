@@ -1,9 +1,9 @@
 ---
 layout: post
-title:  Algorithms - Priority Queue
+title:  Data Structure - Priority Queue
 date:   2020-09-30 22:00:00 -0700
 categories: study-notes
-tag: algorithms
+tag: data structure
 ---
 
 * content
