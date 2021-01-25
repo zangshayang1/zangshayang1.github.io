@@ -164,7 +164,7 @@ class LevelOrderTraversal:
     return ;
 ```
 
-# Intermedium
+# Median
 
 ## L/R Invert Tree
 ```python

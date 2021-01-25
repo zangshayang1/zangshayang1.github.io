@@ -20,11 +20,11 @@ class ClassicQuickSort:
 
   def quickSort(self, nums):
 
-  	# Think about the following array when dealing with quick sort
-  	# [. . . l . . k . . . p]
-  	# l marks the first element that is bigger than pivot, to be swapped with p very soon
-  	# k marks the current element
-  	# p marks the pivot element
+    # Think about the following array when dealing with quick sort
+    # [. . . l . . k . . . p]
+    # l marks the first element that is bigger than pivot, to be swapped with p very soon
+    # k marks the current element
+    # p marks the pivot element
     def partition(A, i, j):
       l, p = i, j
       for k in range(i, j):

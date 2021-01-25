@@ -11,9 +11,125 @@ tag: algorithms
 
 
 
-Last Update: 2021-01-17
+Last Update: 2021-01-21
 
+# Strings
+
+## All Interleave Strings
+```python
+'''
+Permutations maybe?
+Given two strings as below:
+  ab
+  cd
+Return all the possible strings interleaving these two:
+  abcd
+  acbd
+  acdb
+  cdab
+  cadb
+  cabd
+'''
+class AllInterleaveStrings:
+  def solution(self, s1, s2):
+    rst = []
+    pref = ""
+    self._helper(s1, s2, pref, rst)
+    return rst
+
+  def _helper(self, s1, s2, pref, rst):
+    if s1 == "" or s2 == "":
+      rst.append(pref + s1 + s2)
+      return ;
+
+    self._helper(s1[1:], s2, pref + s1[0], rst)
+    self._helper(s1, s2[1:], pref + s2[0], rst)
+    return ;
+```
 # Numbers
+
+## Multiply String Numbers
+```python
+'''
+Given two integer numbers in string representation.
+Return their multiplied result in string representation.
+'''
+class MultiplyStringNumbers:
+
+  def solution(self, num1, num2):
+    if num1 == '0' or num2 == '0':
+      return '0'
+
+    # Imagine manually working on a multiplication
+    # From right to left, use one digit from short_num to multiple-through
+    # all the digits from long_num. Store the results and apply additions later.
+    if len(num1) > len(num2):
+      long_num, short_num = num1, num2
+    else:
+      long_num, short_num = num2, num1
+
+    global_result = '0'
+    for i in range(len(short_num) - 1, -1, -1):
+      sd = self._digitChar2digitInt(short_num[i])
+      carry = 0
+      local_result = ''
+      for j in range(len(long_num) - 1, -1, -1):
+        ld = self._digitChar2digitInt(long_num[j])
+        remainder = (sd * ld + carry) % 10
+        carry = (sd * ld + carry) // 10
+        local_result += str(remainder)
+
+      # don't forget the last 'carry'
+      if carry > 0:
+        local_result += str(carry)
+
+      # turn the string number around
+      local_result = local_result[::-1]
+
+      # pad zeros as i move from right to left on the short_num
+      for _ in range(len(short_num) - 1 - i):
+        local_result += '0'
+
+      # string number addition itself is another problem.
+      global_result = self._addStringNumbers(global_result, local_result[::-1] * 10 * i)
+
+    return global_result
+
+  def _addStringNumbers(self, num1, num2):
+    i, j = len(num1) - 1, len(num2) - 1
+    s = ''
+    carry = 0
+    while i > -1 and j > -1:
+      d1, d2 = self._digitChar2digitInt(num1[i]), self._digitChar2digitInt(num2[j])
+      remainder = (d1 + d2 + carry) % 10
+      carry = (d1 + d2 + carry) // 10
+      s += str(remainder)
+      i -= 1
+      j -= 1
+
+    while i > -1:
+      d1 = self._digitChar2digitInt(num1[i])
+      remainder = (d1 + carry) % 10
+      carry = (d1 + carry) // 10
+      s += str(remainder)
+      i -= 1
+
+    while j > -1:
+      d2 = self._digitChar2digitInt(num2[j])
+      remainder = (d2 + carry) % 10
+      carry = (d2 + carry ) // 10
+      s += str(remainder)
+      j -= 1
+
+    if carry > 0:
+      s += str(carry)
+
+    # print("{} + {} = {}".format(num1, num2, s[::-1]))
+    return s[::-1]
+
+  def _digitChar2digitInt(self, char):
+    return ord(char) - ord('0')
+```
 
 ## Count Primes
 ```python
