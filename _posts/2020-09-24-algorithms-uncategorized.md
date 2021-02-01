@@ -11,7 +11,7 @@ tag: algorithms
 
 
 
-Last Update: 2021-01-21
+Last Update: 2021-01-31
 
 # Strings
 
@@ -43,37 +43,168 @@ class LongestSubstringWithoutDup:
       j += 1
 ```
 
-## All Interleave Strings
+## Is Interleaving String
 ```python
 '''
-Permutations maybe?
-Given two strings as below:
-  ab
-  cd
-Return all the possible strings interleaving these two:
-  abcd
-  acbd
-  acdb
-  cdab
-  cadb
-  cabd
-'''
-class AllInterleaveStrings:
-  def solution(self, s1, s2):
-    rst = []
-    pref = ""
-    self._helper(s1, s2, pref, rst)
-    return rst
+Given strings, s1, s2, s3.
+Return if interleaving s1 and s2 can make s3.
 
-  def _helper(self, s1, s2, pref, rst):
-    if s1 == "" or s2 == "":
-      rst.append(pref + s1 + s2)
+Given:
+  s1: ab
+  s2: cd
+  s3: acbd
+Return: True
+
+Given:
+  s1: abb
+  s2: cdd
+  s3: abbddc
+Return: False
+'''
+class IsInterleavingStrings:
+
+  '''
+  Given:
+    s1: ab
+    s2: cd
+    s3: abcd
+  Find all the possible interleaved results:
+    [abcd, acbd, acdb, cdab, cadb, cabd]
+  '''
+  def bruteForce(self, s1, s2, s3):
+
+    def _bf_helper(s1, s2, pref, rst):
+      if s1 == "" or s2 == "":
+        rst.append(pref + s1 + s2)
+        return ;
+
+      self._bf_helper(s1[1:], s2, pref + s1[0], rst)
+      self._bf_helper(s1, s2[1:], pref + s2[0], rst)
       return ;
 
-    self._helper(s1[1:], s2, pref + s1[0], rst)
-    self._helper(s1, s2[1:], pref + s2[0], rst)
-    return ;
+    # main
+    rst = []
+    pref = ""
+    _bf_helper(s1, s2, pref, rst)
+    return s3 in rst
+
+  '''
+  Naive DFS without memorization, pretty much like
+  traversing a graph without marking vertices as visited.
+
+  O(2^n) where n is the number of combinations.
+  '''
+  def naive_dfs(self, s1, s2, s3):
+
+    def _dfs_helper(s1, s2, s3, prefix):
+      if s1 == "" or s2 == "":
+        return prefix + s1 + s2 == s3
+
+      if _dfs_helper(s1[1:], s2, s3, prefix + s1[0]):
+        return True
+
+      if _dfs_helper(s1, s2[1:], s3, prefix + s2[0]):
+        return True
+
+      return False
+
+    # main
+    return _dfs_helper(s1, s2, s3, "")
+
+  '''
+  DFS with memorization.
+
+  O(n) where n is the number of combinations.
+  '''
+  def memo_dfs(self, s1, s2, s3):
+
+    def _memo_helper(s1, i, s2, j, s3, k, memo):
+      if i == len(s1):
+        return s2[j:] == s3[k:]
+
+      if j == len(s2):
+        return s1[i:] == s3[k:]
+
+      # the gist of memorization: return immediately if same (i, j) has been visited.
+      if memo[i][j] != -1:
+        return memo[i][j]
+
+      if s1[i] == s3[k] and _memo_helper(s1, i + 1, s2, j, s3, k + 1):
+        memo[i][j] = 1
+        return True
+
+      if s2[j] == s3[k] and _memo_helper(s1, i, s2, j + 1, s3, k + 1):
+        memo[i][j] = 1
+        return True
+
+      memo[i][j] = 0
+      return False
+
+    # main
+    # -1: unvisited; 0: False; 1: True.
+    memo = [[-1 for _ in range(len(s2))] for _ in range(s1)]
+    return _memo_helper(s1, 0, s2, 0, s3, 0, memo)
+
+  '''
+  2D dp solution.
+
+  Same complexity as DFS with memorization.
+  '''
+  def dp_2D(self, s1, s2, s3):
+    if len(s1) + len(s2) != len(s3):
+      return False
+
+    dp = [[False for _ in range(len(s2) + 1)] for _ in range(len(s1) + 1)]
+
+    dp[0][0] = True
+
+    for i in range(1, len(s1) + 1):
+      dp[i][0] = dp[i - 1][0] and s1[i - 1] == s3[i - 1]
+
+    for j in range(1, len(s2) + 1):
+      dp[0][j] = dp[0][j - 1] and s2[j - 1] == s3[j - 1]
+
+    for i in range(1, len(s1) + 1):
+      for j in range(1, len(s2) + 1):              
+        if dp[i][j - 1] and s2[j - 1] == s3[i + j - 1]:
+          dp[i][j] = True
+        elif dp[i - 1][j] and s1[i - 1] == s3[i + j - 1]:
+          dp[i][j] = True
+        else:
+          dp[i][j] = False
+
+    return dp[-1][-1]
 ```
+
+## Edit Distance
+```python
+'''
+Given two strings, return the minimum edit distance.
+
+Given:
+  s1: horse
+  s2: ros
+Return: 3
+'''
+class EditDistance:
+  def solution(self, s1, s2):
+    dp = [[0 for _ in range(len(s2) + 1)] for _ in range(len(s1) + 1)]
+
+    for i in range(len(s1) + 1):
+        dp[i][0] = i
+    for j in range(len(s2) + 1):
+        dp[0][j] = j
+
+    for i in range(1, len(s1) + 1):
+        for j in range(1, len(s2) + 1):
+            if s1[i - 1] == s2[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1]
+            else:
+                dp[i][j] = min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]) + 1
+
+    return dp[-1][-1]
+```
+
 # Numbers
 
 ## Multiply String Numbers
