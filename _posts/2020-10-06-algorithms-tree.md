@@ -550,6 +550,43 @@ class SumOfLeftLeaves:
     return self._helper(root.left, True) + self._helper(root.right, False)
 ```
 
+## Sum Root To Leaf Numbers
+```python
+'''
+Input:
+    1
+  /   \
+ 2     3
+
+Return: 12 + 13 = 25
+'''
+class SumRootToLeafNumbers:
+  def solution(self, root):
+    if root is None:
+      return 0
+
+    s = 0
+    str_nums = [str(root.val)]
+    q = [root]
+    while q:
+      node = q.pop(0)
+      strval = str_nums.pop(0)
+
+      if node.left is None and node.right is None:
+        s += int(strval)
+        continue
+
+      if root.left:
+        q.append(root.left)
+        str_nums.append(strval + str(root.left.val))
+
+      if root.right:
+        q.append(root.right)
+        str_nums.append(strval + str(root.right.val))
+
+    return s
+```
+
 # Advanced
 
 ## Lowest Common Ancestor
@@ -1094,6 +1131,50 @@ class LongestConsecutiveSequence:
 
     return max(ll, rl), max(lg, rg), root.val
 
+```
+
+## Serialize/Deserialize Binary Tree
+```python
+class SerdesBinaryTree:
+
+  def serialize(self, root):
+    if root is None:
+      return ""
+
+    ans = []
+    q = [root]
+    while q:
+      node = q.pop(0)
+      if node is None:
+        ans.append('#' + ',')
+      else:
+        ans.append(str(node.val) + ',')
+        q.append(node.left)
+        q.append(node.right)
+
+    return ''.join(ans)
+
+  def deserialize(self, data):
+    if data == "":
+      return None
+
+    data_list = data.split(',')
+    root = TreeNode(int(data_list.pop(0)))
+    q = [root]
+    while q:
+      node = q.pop(0)
+      left_strval = data_list.pop(0)
+      right_strval = data_list.pop(0)
+
+      if left_strval != '#':
+        node.left = TreeNode(int(left_strval))
+        q.append(node.left)
+
+      if right_strval != '#':
+        node.right = TreeNode(int(right_strval))
+        q.append(node.right)
+
+    return root
 ```
 
 # Hard

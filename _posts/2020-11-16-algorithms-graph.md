@@ -444,6 +444,66 @@ class CheapestFlightsWithinKStops:
       return -1
     else:
       return shortest[dst]
+```
+
+## Number Of Islands
+```python
+'''
+Input: grid = [
+  ["1","1","0","0","0"],
+  ["1","1","0","0","0"],
+  ["0","0","1","0","0"],
+  ["0","0","0","1","1"]
+]
+Output: 3
+'''
+class NumberOfIslands:
+  def solution(self, grid):
+    counter = 0
+    n_rows = len(grid)
+    n_cols = len(grid[0])
+    visited = [[False for _ in range(n_cols)] for _ in range(n_rows)]
+    for i in range(n_rows):
+      for j in range(n_cols):
+        if grid[i][j] == "0" or visited[i][j]:
+          continue
+
+        counter += 1
+        self._bfs(grid, i, j, visited) # or self._bfs(grid, i, j, visited)
+
+    return counter
+
+  def _dfs(self, grid, i, j, visited):
+    n_rows = len(grid)
+    n_cols = len(grid[0])
+
+    visited[i][j] = True
+    if i + 1 < n_rows and grid[i + 1][j] == "1" and not visited[i + 1][j]:
+      self._dfs(grid, i + 1, j, visited)
+    if i - 1 > -1 and grid[i - 1][j] == "1" and not visited[i - 1][j]:
+      self._dfs(grid, i - 1, j, visited)
+    if j + 1 < n_cols and grid[i][j + 1] == "1" and not visited[i][j + 1]:
+      self._dfs(grid, i, j + 1, visited)
+    if j - 1 > -1 and grid[i][j - 1] == "1" and not visited[i][j - 1]:
+      self._dfs(grid, i, j - 1, visited)
+
+    return
+
+def _bfs(self, grid, i, j, visited):
+    n_rows = len(grid)
+    n_cols = len(grid[0])
+    q = collections.deque([(i, j)])
+    while q:
+      i, j = q.popleft()
+      visited[i][j] = True
+      if i + 1 < n_rows and grid[i + 1][j] == "1" and not visited[i + 1][j]:
+        q.append((i + 1, j))
+      if i - 1 > -1 and grid[i - 1][j] == "1" and not visited[i - 1][j]:
+        q.append((i - 1, j))
+      if j + 1 < n_cols and grid[i][j + 1] == "1" and not visited[i][j + 1]:
+        q.append((i, j + 1))
+      if j - 1 > -1 and grid[i][j - 1] == "1" and not visited[i][j - 1]:
+        q.append((i, j - 1))
 
 
 ```
