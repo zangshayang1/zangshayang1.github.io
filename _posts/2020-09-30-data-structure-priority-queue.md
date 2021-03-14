@@ -10,20 +10,18 @@ tag: data structure
 {:toc}
 
 
-# Binary Heap
+Last Updated: 2021-03-10
 
-## Min Heap Implementation
+# Binary Heap Array Implementation
 ```python
 '''
-Priority Queue data structure should support the following operations:
+Binary Heap data structure should support the following operations:
 1. pop() - O(logn) pop min element or max element
 2. push() - O(logn) add element
 3. length() - O(1) return number of remaining elements
 4. peek() - O(1) return the min/max element without removal
 
-Binary Heap is one way it's implemented.
-
-The invariant for a min binary heap is:
+The invariant for a min binary heap array implementation is:
 for elements in an array [1, 2, 5, 7, 13, 6, 9 ...], A[k] < A[2k + 1] and A[k] < A[2k + 2]
 '''
 class PriorityQueueItemInterface:
@@ -156,4 +154,93 @@ class MinBinaryHeapImplementationCheck:
     pq.push(MyInt(-1))
     if pq.pop().compare(MyInt(-1)) != 0:
       raise Exception("Data Structure Correctness Check: Failed")
+```
+# Learn Java Priority Queue
+TODO
+
+# Learn Python Heapq
+```python
+'''
+Given an undirected graph by a list of edges -> (source, target, weight).
+Find the shortest path between given start node and given end node.
+
+Input:
+edges = [('X', 'A', 7), ('X', 'B', 2), ('X', 'C', 3), ('X', 'E', 4),
+    ('A', 'B', 3), ('A', 'D', 4), ('B', 'D', 4), ('B', 'H', 5),
+    ('C', 'L', 2), ('D', 'F', 1), ('F', 'H', 3), ('G', 'H', 2),
+    ('G', 'Y', 2), ('I', 'J', 6), ('I', 'K', 4), ('I', 'L', 4),
+    ('J', 'L', 1), ('K', 'Y', 5)]
+start node = 'X'
+end node = 'Y'
+
+Output:    
+['X', 'B', 'H', 'G', 'Y']
+'''
+import collections
+import heapq
+
+class SSSP:
+
+  def make_graph(self, edges):
+    G = collections.defaultdict(list)
+    for s, t, w in edges:
+      G[s].append((t, w))
+      G[t].append((s, w))
+
+    return G
+
+  def solution(self, edges, X, Y):
+
+    G = self.make_graph(edges)
+
+    # maintain a min dist map
+    distMap = {'X': 0}
+    # maintain a parent map for tracing
+    parentMap = {'X': None}
+    # maintain a visited set for dedup
+    visited = set()
+
+    # learn the use of heapq in python
+    pq = []
+    heapq.heappush(pq, (0, 'X')) # sorted by the first element of the tuple
+
+    while pq:
+
+      # s: current start node
+      # m: min dist from X to current start node
+      m, s = heapq.heappop(pq)
+
+      visited.add(s)
+      neighbors = G[s]
+      # t: neighboring target node
+      # w: weight from s to t
+      for t, w in neighbors:
+
+        if t in visited:
+          continue
+
+        if t not in distMap:
+          distMap[t] = m + w
+          parentMap[t] = s
+          heapq.heappush(pq, (m + w, t))
+          continue
+
+        if distMap[t] > m + w:
+          distMap[t] = m + w
+          parentMap[t] = s
+          heapq.heappush(pq, (m + w, t))
+
+    # if Y is not reachable from X
+    if Y not in parentMap:
+      return -1
+
+    # trace parent from Y all the way to X  
+    result = []
+    tmp = Y
+    while tmp is not None:
+      p = parentMap[tmp]
+      result.append(tmp)
+      tmp = p
+
+    return result[::-1]
 ```

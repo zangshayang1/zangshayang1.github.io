@@ -10,7 +10,7 @@ tag: algorithms
 {:toc}
 
 
-Last Update: 2020-12-30
+Last Update: 2020-03-13
 
 # Text Book
 
@@ -504,8 +504,101 @@ def _bfs(self, grid, i, j, visited):
         q.append((i, j + 1))
       if j - 1 > -1 and grid[i][j - 1] == "1" and not visited[i][j - 1]:
         q.append((i, j - 1))
+```
 
+## Knight Tour
+```python
+'''
+Given a N x N chess board and a starting position (0, 0).
+Return True if a knight can tour around the entire board (step on every cell
+without repetition), False otherwise.
+'''
+class KnightTour:
 
+  def dfs_solution(self, N):
+    delta_X = [1, 1, -1, -1, 2, 2, -2, -2]
+    delta_Y = [2, -2, 2, -2, 1, -1, 1, -1]
+    return self._dfs_helper(N, 0, 0, 1, delta_X, delta_Y)
+
+  def _dfs_helper(self, N, x, y, steps, delta_X, delta_Y):
+    if steps == N * N:
+      return True
+
+    for i in range(8):
+      if not self._on_board(N, x + delta_X[i], y + delta_Y[i]):
+        continue
+
+      if self._dfs_helper(N, x + delta_X[i], y + delta_Y[i], steps + 1, delta_X, delta_Y):
+        return True
+
+    return False
+
+  def _on_board(self, N, x, y):
+    return x >= 0 and x < N and y >= 0 and y < N
+```
+
+## N Queens Problem
+```python
+'''
+Given N, return the number of distinct ways to place N queens on a N x N chess board.
+'''
+class NQueens:
+
+  def dfs_solution(self, N):
+    # every '.' stand for a position in a N x N board
+    board = [['.' for _ in range(N)] for _ in range(N)]
+    # use set for dedup
+    placements = set()
+    # starting row index: 0
+    self._dfs_helper(0, N, board, placements)
+
+    return len(placements)
+
+  # For NQueens problem
+  # Each row must have one and only one queen.
+  # We only need to search for the right column index to place a queen at each row.
+  # Next queen must be placed at the next row.
+  # A solution can be found by going from top row to bottom row.
+  def _dfs_helper(self, row, N, board, placements):
+    if row == N:
+      placements.add(self._serialize(board))
+      return ;
+
+    for j in range(N):
+      if not self._safe(N, board, row, j):
+        continue
+
+      board[row][j] = 'Q'
+      self._dfs_helper(row + 1, N, board, placements)
+
+      # backtracking
+      board[row][j] = '.'
+
+    return ;
+
+  def _safe(self, N, board, x, y):
+      for i in range(N):
+        if board[i][y] == 'Q':
+          return False
+
+      for j in range(N):
+        if board[x][j] == 'Q':
+          return False
+
+      # diagonal
+      for d in range(- N + 1, N):
+        if self._on_board(x + d, y + d, len(board)) and board[x + d][y + d] == 'Q':
+          return False
+        if self._on_board(x + d, y - d, len(board)) and board[x + d][y - d] == 'Q':
+          return False
+
+      return True
+
+  def _on_board(self, x, y, L):
+    return x >= 0 and x < L and y >= 0 and y < L
+
+  def _serialize(self, board):
+    return ','.join([''.join(row) for row in board])
 ```
 
 # Resource

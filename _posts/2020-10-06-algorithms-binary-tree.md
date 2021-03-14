@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  Algorithms - Tree
+title:  Algorithms - Binary Tree
 date:   2020-10-06 22:00:00 -0700
 categories: study-notes
 tag: algorithms

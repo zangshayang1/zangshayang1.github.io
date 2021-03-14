@@ -185,6 +185,60 @@ class SumOfLinkedList:
     return rst.next
 ```
 
+# Advanced
+
+## Merge K Sorted LinkedList
+```python
+class MergeKSortedLinkedList:
+
+  # O(KN)
+  def solution(self, lists):
+
+    rst = ListNode(-1)
+    ptr = rst
+
+    done = all([head is None for head in lists])
+    while not done:
+
+      idx = self.find_min_idx([MAX_INT if head is None else head.val for head in lists])
+      # connect
+      ptr.next = lists[idx]
+      # advance
+      lists[idx] = lists[idx].next
+      # next
+      ptr = ptr.next
+      # update flag
+      done = all([head is None for head in lists])
+
+    return rst.next
+
+  # O(NlogK)
+  # Merging K sorted lists is logically same as external merge sort
+  # Maintaining a MinHeap with K elements improves the performance
+  # The challenge here is to write a binary heap on the spot.
+  # Ref: Data Structure - Priority Queue / MinHeap
+  def improved_solution(self, lists):
+
+    rst = ListNode(-1)
+    ptr = rst
+    pq = MinHeap()
+
+    for node in lists:
+        pq.push(node)
+
+    while not pq.isEmpty():
+
+        minNode = pq.pop()
+
+        ptr.next = minNode
+        ptr = ptr.next
+
+        if minNode.next is not None:
+            pq.push(minNode.next)
+
+    return result.next
+```
+
 # Resources
 
 ```python
@@ -205,5 +259,4 @@ class Utils:
       ptr = ptr.next
 
     return copy.next
-
 ```

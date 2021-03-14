@@ -11,9 +11,133 @@ tag: algorithms
 
 
 
-Last Update: 2021-01-31
+Last Update: 2021-02-23
 
 # Strings
+
+## Roman Numerals
+```python
+'''
+Symbol       Value
+I             1
+V             5
+X             10
+L             50
+C             100
+D             500
+M             1000
+
+4/9 rules:
+I is placed before V (5) and X (10) to make 4 and 9.
+X is placed before L (50) and C (100) to make 40 and 90.
+C is placed before D (500) and M (1000) to make 400 and 900.
+'''
+class RomanNumerals:
+
+  '''
+  Convert given integer (< 4000) to Roman numerals.
+  '''
+  def convertIntToRoman(num):
+    roman = ""
+
+    char_map = {
+      1000: 'M',
+      900: 'CM', 500: 'D', 400: 'CD', 100: 'C',
+      90: 'XC', 50: 'L', 40: 'XL', 10: 'X',
+      9: 'IX', 5: 'V', 4: 'IV', 1: 'I'
+    }
+
+    scalars = [
+      1000,
+      900, 500, 400, 100,
+      90, 50, 40, 10,
+      9, 5, 4, 1
+    ]
+
+    for scalar in scalars:
+      r = num // scalar
+      if r > 0:
+        num -= r * scalar
+        roman += r * char_map[scalar]
+
+    return roman
+
+  '''
+  Convert given Roman numerals (< 4000) to integer.
+  '''
+  def convertRomanToInt(roman):
+    char_map = {
+      'M': 1000,
+      'CM': 900, 'D': 500, 'CD': 400, 'C': 100,
+      'XC': 90, 'L': 50, 'XL': 40, 'X': 10,
+      'IX': 9, 'V': 5, 'IV': 4, 'I': 1
+    }
+
+    num = 0
+    i = 0
+    while i < len(s):
+      if i + 1 < len(s) and s[i] + s[i + 1] in char_map:
+        num += char_map[s[i] + s[i + 1]]
+        i += 2
+      else:            
+        num += char_map[s[i]]
+        i += 1
+
+    return num
+```
+
+## Decode String
+```python
+'''
+Input: s = "3[a]2[bc]"
+Output: "aaabcbc"
+
+Input: s = "3[a2[c]]"
+Output: "accaccacc"
+
+Input: s = "2[abc]3[cd]ef"
+Output: "abcabccdcdcdef"
+'''
+class DecodeString:
+
+  def solution(self, s):
+    copy_numbers = []
+    stk = []
+    i = 0
+    while i < len(s):
+
+      # decode numeric chars
+      copy = ""
+      while '0' <= s[i] <= '9':
+        copy += s[i]
+        i += 1
+      if copy != "":
+        copy_numbers.append(int(copy))
+
+      # when s[i] is letter or '[', push them to stack
+      if s[i] != ']':
+        stk.append(s[i])
+        i += 1
+        continue
+
+      # when s[i] is ']'
+      substring = ""
+      # reconstruct a substring by looking backward until '['
+      while stk[-1] != '[':
+        substring = stk.pop(-1) + substring
+      # remove '['
+      stk.pop(-1)
+      # make copies using the closest number in number stack
+      copy = numbers.pop(-1)
+      substring = copy * substring
+
+      # put the substring back to stack
+      # it will join new substring reconstruction in outer []
+      stk.append(substring)
+      i += 1
+
+    return ''.join(stk)
+```
 
 ## Longest Substring Without Duplicate
 ```python
