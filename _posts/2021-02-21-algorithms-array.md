@@ -127,3 +127,61 @@ class MissingPositiveInteger:
 
     return n + 1
 ```
+
+## Word Distance
+```python
+class WordDistance:
+
+  '''
+  Type 1
+
+  Given a list of words and two words that appeared in this list more than once.
+  Return the minimum indexing distance between these two words.
+  '''
+  def type1_dumb_solution(self, words_list, word1, word2):
+    min_dist = 2 ** 31 - 1
+    for i in range(len(words_list)):
+      for j in range(len(words_list)):
+        if words_list[i] == word1 and words_list[j] == word2:
+          min_dist = min(min_dist, abs(i - j))
+
+    return min_dist
+
+  def type1_smart_solution(self, words_list, word1, word2):
+    min_dist = 2 ** 31 - 1
+    i1, i2 = -1, -1
+    for i in range(len(words_list)):
+      if words_list[i] == word1:
+        i1 = i
+      if words_list[i] == word2:
+        i2 = i
+
+      if i1 != -1 and i2 != -1:
+        min_dist = min(min_dist, abs(i1 - i2))
+
+    return min_dist
+
+  '''
+  Type 2
+
+  Given two sorted lists of integers representing the positions of two
+  frequently appeared words in a document.
+  Return the closest distance of these two words in this document.
+  '''
+  def solution(self, list1, list2):
+
+    if len(list1) == 0 or len(list2) == 0:
+      return -1
+
+    d = 2 ** 31 - 1
+    i, j = 0, 0
+    while i < len(list1) and j < len(list2):
+      if list1[i] < list2[j]:
+        d = min(d, list2[j] - list1[i])
+        i += 1
+      else:
+        d = min(d, list1[i] - list2[j])
+        j += 1
+
+    return d
+```

@@ -10,7 +10,7 @@ tag: algorithms
 {:toc}
 
 
-Last Update: 2020-11-12
+Last Update: 2021-03-13
 
 # Basics
 
@@ -1077,6 +1077,45 @@ class ConvertTreeTo2DArray:
       arrays.append(adict[column])
 
     return arrays
+```
+
+## Find Leaves Of Binary Tree
+```python
+'''
+Given a tree:
+    1
+   / \
+  2   3
+ / \
+4   5
+
+Return [[4, 5, 3], [2], [1]]
+'''
+class FindLeavesOfBinaryTree:
+
+  def solution(self, root):
+
+    collector = []
+    h = self._assign_height(root, collector)
+
+    rst = [[] for _ in range(h + 1)]
+
+    for v, h in collector:
+      rst[h].append(v)
+
+    return rst
+
+  def _assign_height(self, root, collector):
+    if root is None:
+      return -1
+
+    left_height = self._assign_height(root.left, collector)
+    right_height = self._assign_height(root.right, collector)
+
+    root_height = max(left_height, right_height) + 1
+    collector.append((root.val, root_height))
+
+    return root_height
 ```
 
 ## Longest Consecutive Sequence
