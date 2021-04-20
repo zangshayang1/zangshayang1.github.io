@@ -10,7 +10,7 @@ tag: algorithms
 {:toc}
 
 
-Last Update: 2021-03-13
+Last Update: 2021-04-20
 
 # Undefined
 
@@ -378,7 +378,50 @@ class PartitionIntoFourSubsetsWithEqualSum:
           if mask & (1 << i) > 0:
               s += nums[i]
       return s
-```  
+```
+
+## Partition Into K Subsets With Equal Sum
+```python
+'''
+# Ref: Partition Into Two Subsets With Equal Sum
+# Ref: Partition Into Four Subsets With Equal Sum
+'''
+class PartitionIntoKSubsetsWithEqualSum:
+
+  def canPartitionKSubsets(self, nums, k):
+    if k > len(nums): return False
+    if sum(nums) % k != 0: return False
+
+    target = sum(nums) // k
+    nums.sort(reverse=True)
+    visited = [False for _ in range(len(nums))]
+
+    return self._canPartitionKTimes(nums, k, 0, target, visited)
+
+  # Two fold DFS:
+  # One is searching for a match curr == target
+  # Second is searching for Kth complete match
+  def _canPartitionKTimes(self, nums, k, curr, target, visited):
+    if k == 0:
+      # only when k == 0, can the whole dfs be terminated
+      return True
+
+    if curr == target:
+      # only meet the above condition, can "k" be decremented
+      return self._canPartitionKTimes(nums, k - 1, 0, target, visited)
+
+    for i in range(len(nums)):
+      if visited[i]: continue
+      if curr + nums[i] > target: continue
+
+      visited[i] = True
+      if self._canPartitionKTimes(nums, k, curr + nums[i], target, visited):
+        # only by passing the above checks, can "curr" be updated
+        return True
+      visited[i] = False
+
+    return False
+```
 
 # Permutations and Combinations
 
