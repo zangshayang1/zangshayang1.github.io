@@ -3,7 +3,7 @@ layout: post
 title: DataStructure - Streaming DataStructure
 date: 2017-04-24 13:00:00 -0700
 categories: study-notes
-tag: dataStructure
+tag: data-structure
 ---
 * content
 {:toc}

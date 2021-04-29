@@ -3,7 +3,7 @@ layout: post
 title: DataStructure - Priority Queue
 date: 2017-02-05 16:20:00 -0800
 categories: study-notes
-tag: dataStructure
+tag: data-structure
 ---
 
 * content

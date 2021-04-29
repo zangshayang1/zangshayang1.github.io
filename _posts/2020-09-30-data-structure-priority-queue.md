@@ -3,7 +3,7 @@ layout: post
 title:  Data Structure - Priority Queue
 date:   2020-09-30 22:00:00 -0700
 categories: study-notes
-tag: data structure
+tag: data-structure
 ---
 
 * content

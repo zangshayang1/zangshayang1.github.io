@@ -3,7 +3,7 @@ layout: post
 title: DataStructure - Persistence
 date: 2017-06-03 13:00:00 -0700
 categories: study-notes
-tag: dataStructure
+tag: data-structure
 ---
 * content
 {:toc}

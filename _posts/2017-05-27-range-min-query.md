@@ -3,7 +3,7 @@ layout: post
 title: DataStructure - Range Minima Problem
 date: 2017-05-27 13:00:00 -0700
 categories: study-notes
-tag: dataStructure
+tag: data-structure
 ---
 * content
 {:toc}
