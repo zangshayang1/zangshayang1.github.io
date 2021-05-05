@@ -136,7 +136,24 @@ Static utility classes and singletons are inappropriate for classes whose behavi
 
 ### Avoid Creating Unnecessary Objects
 
-For example, don't concatenate strings by "+" operator in loops.
+There are two ways to create a string.
+* `s1 = "haha"`
+* `s2 = new String("haha")`
+* `s3 = "haha"`
+* `s4 = s3.intern()`
+
+Let's zoom in here:
+* Both variables `s1` and `s2` are declared in the call stack space.
+* s1's value is created and stored in __String Constant Pool (SCP)__ while s2's value is created and stored in __main heap other than SCP__.
+  * Till Java 7, SCP resides in a space called `PermGen` outside of the main heap. PermGen has fixed size (configurable by `XX:PermSize=512m -XX:MaxPermSize=512m`) and is ignored by GC. It often leads to "OOM".
+  * After Java 7, SCP resides in main heap tracked by GC.
+* During the declaration of `s3`, it found that `"haha"` exists in SCP and thus assign the address of the value to the variable `s3`. That's why `s1 == s3 return true`.
+* During the declaration of `s2`, the constructor takes in a `"haha"`, which already exists in SCP (created during `s1 = "haha"`) and created a copy of the value in outside of SCP (still in main heap) and then assign the address of the copy to the variable `s2`. That's why `s1 == s2 return false`.
+* What `s3.intern()` does is it looks up the SCP trying find a value equal to s3's value. If it finds one, return the value and assign its address to  variable `s4`. If it doesn't find one, create such value and assign its address to variable `s4`.
+
+So...
+* Calling `new String()` creates unnecessary duplicates.
+* Repeated string concatenation by `+` also creates unnecessary objects.
 
 ### Eliminate Obsolete Object References
 
@@ -1003,6 +1020,921 @@ Practically speaking, it rarely provides benefits over cost. However we need to 
   * Intermediate operations are better candidates than terminal operations for parallelism. For example, `reduce()/sum()` are good while `collect()` is bad because it maintains a mutable state internally and combining collections are expensive.
 
 # Methods
+
+### Check Parameters for Validity
+
+There are class-level documentation and method-level documentation. Class-level documentation applies to all methods under this class. In the space of validating arguments, if an argument is `null`, every method will throw `NullPointerException`, which should be documented at class level.
+
+Some typical exceptions throw during argument validation:
+* `IllegalArgumentException`
+* `IndexOutOfBoundsException`
+* `NullPointerException`
+
+Some methods validating arguments:
+* `Objects.requireNonNull()`
+* `Preconditions.checkNotNull()`
+
+Some annotations serve as a reminder:
+* `@Nullable`
+* `@NotNull`
+
+### Make Defensive Copies When Needed
+
+About defensive copies:
+* Return defensive copies to clients so the client will never be able to modify the internals of the returned object
+* Make defensive copies when you receive an object reference from client so any damage made to the object will not impact your program
+* No defensive copy is needed when you use immutable objects
+
+__Use Example of Defensive Copies__  
+
+```java
+/*
+* An example of how attacking can be done without defensive copies
+*/
+public final class Period {
+
+  private final Date start;
+  private final Date end;
+
+  public Period(Date start, Date end) {
+    this.start = start;
+    this.end = end;
+  }
+
+  public Date getStart() {
+    return this.start;
+  }
+
+  public Date getEnd() {
+    return this.end;
+  }
+}
+
+// Example of attacking the internals of a "Period" instance
+Date start = new Date();
+Date end = new Date();
+Period period = new Period(start, end);
+end.setYear(78); // modified internals of "period"
+
+/*
+* An example of how correction can be done with defensive copies
+*/
+public final class Period {
+
+  private final Date start;
+  private final Date end;
+
+  public Period(Date start, Date end) {
+    this.start = new Date(start.getTime());
+    this.end = new Date(end.getTime());
+  }
+
+  public Date getStart() {
+    return new Date(this.start.getTime());
+  }
+
+  public Date getEnd() {
+    return new Date(this.end.getTime());
+  }
+}
+```
+
+### Design Method Signatures Carefully
+
+__Notes__
+* Choose method names carefully (Refer to [Adhere to Generally Accepted Naming Conventions](#adhere-to-generally-accepted-naming-conventions))
+* Don't over provision convenience methods.
+* Avoid long parameter list
+  * break a method into multiple __orthogonal__ methods
+  * create helper class or model class to hold a group of parameters
+* For parameter types, favor interfaces over classes.
+* Prefer two-element `enum` to `boolean` parameters. Enum name makes better sense than boolean in function signatures
+
+### Use Overloading Judiciously
+
+The choice of which `overloaded` method to invoke is decided at Compile time. In other words, Runtime argument type doesn't change it. The choice of which `overriden` method to invoke is decided at Runtime.
+
+__Rule of Thumb:__
+1. Avoid confusing use of overloaded method. Overloading with different number of parameters is non-confusing.
+2. Or the overloaded methods have radically different types of parameters, meaning they don't have any overlapped ancestor on their inheritance trees.
+3. When you have to overload the constructor with the same number of parameters and similar type of parameters, try static factory methods with different names.
+
+__Overloading Example__
+
+```java
+public class CollectionClassifier {
+
+  public static String classify(Set<?> set) {
+    return "Set";
+  }
+
+  public static String classify(List<?> list) {
+    return "List";
+  }
+
+  public static String classify(Collection<?> collection) {
+    return "Collection";
+  }
+}
+
+// RUNTIME
+Collection<?>[] collections = {
+  new HashSet<String>(),
+  new ArrayList<Integer>(),
+  new HashMap<String, Integer>()
+};
+for (Collection<?> c : collections) {
+  System.out.println(CollectionClassifier.classify(c))
+}
+
+// The above runtime prints out:
+// Collection
+// Collection
+// Collection
+```
+
+__Overriding Example__
+```java
+class Wine {
+  String name() { return "wine"; }
+}
+
+class SparklingWine extends Wine {
+  @Override String name() { return "sparkling wine"; }
+}
+
+class Champagne extends SparklingWine {
+  @Override String name() { return "champagne"; }
+}
+
+// RUNTIME
+List<Wine> wineList = List.of(new Wine(), new SparklingWine(), new Champagne());
+for (Wine w : wineList) {
+  System.out.println(w.name());
+}
+// The above runtime prints out:
+// wine
+// sparkling wine
+// champagne
+```
+
+### Use Varargs Judiciously
+
+Varargs is useful when you need to pass a variable number of arguments at Runtime. However, one need to exercise care when using varargs in performance-critical situations as every invocation of a varargs method costs an array allocation and initialization.
+
+### Return Empty Collections or Arrays, Not Nulls.
+
+Title says it all.
+
+When you return a lot of empty `Collections`, use the following shared immutable objects will give you better performance:
+* `Collections.emptyList()`
+* `Collections.emptyMap()`
+* `Collections.emptySet()`
+
+### Return Optionals Judiciously
+
+Prefer returning `Optional` to returning `null`. Returning `null` implicitly requires checking on client side whereas returning `Optional` does that explicitly. However, using `Optional` does introduce performance overhead.
+
+### Write JavaDoc Comments for All Exposed API Elements
+
+[How To Write Doc Comments](https://www.oracle.com/technical-resources/articles/java/javadoc-tool.html) is the definitive guide on this topic.
+
+Javadoc Utility generates documentation automatically from __src code doc comments__.
+
+Some most-commonly used Javadoc Tags:
+* `@param`
+* `@return`
+* `@throws`
+* `{@code}` displays text in code font
+* `{@implSpec}` describes the method behavior serving as a contract between this class and its subclass
+* `{@literal}` supresses the HTML markup, such as "<", ">", "&", "|", etc.
+
+The first sentence of each doc comment is the summary description. For methods, it's usually a verb phrase. For class, fields and interface, it's usually a noun phrase.
+
+# General Programming
+
+### Minimize the Scope of Local Variables
+
+This is one of the things that most programmers should get uncomfortable when NOT doing so.
+* minimize the scope of local variables
+* keep methods small and focused
+
+### Prefer for-each Loops to Traditional for Loops
+
+I am not talking about `Stream forEach API`.
+
+__for-each loop:__ `for (String s : new String[] {"haha", "hehe", "heihei"})`.
+
+__traditional for loop:__ `for (int i = 0; i < a.length; i++)`.
+
+### Know and Use the Libraries
+
+Numerous features are added to Java libraries in every major release.
+
+Some of the major libraries that every programmer should keep updating themselves with:
+* `java.lang`
+* `java.util (including java.util.collection, java.util.stream and java.util.concurrent)`
+* `java.io`
+
+### Avoid float and double If Exact Answers are Required
+
+When accuracy is critical, use BigDecimal. It gives you control over rounding at the cost of performance overhead.
+
+### Prefer Primitive Types to Boxed Primitives
+
+Eight Primitives
+* `boolean`: 1-bit
+* `byte`: 8-bit signed integer
+* `short`: 16-bit signed integer
+* `int`: 32-bit signed integer
+* `long`: 64-bit signed/unsigned integer (unsigned long was introduced in Java 8)
+* `float`: single precision 32-bit floating point
+* `double`: double precision 64-bit floating point
+* `char`: 16-bit unicode character
+
+Each primitive has a corresponding reference type, called boxed primitives:
+* `Boolean`
+* `Byte`
+* `Short`
+* `Integer`
+* `Long`
+* `Float`
+* `Double`
+* `Character`
+
+Using primitives gives performance benefits. Boxing and Unboxing happens automatically during some operations, such as "<", ">", but NOT "==", which compares identities.
+
+So when to use boxed primitives?
+1. You can't put primitives into a `collection`
+2. You can't use primitives in generic type parameterization
+3. You can't declare a variable to be of type `ThreadLocal<int>`
+
+### Avoid Strings Where Other Types are More Appropriate
+
+String should not substitute for `enum` types.
+
+String should not substitute for aggregate types. For the following example, by using a string as a compound key, you would have to write a method to parse each field from the compound key. Instead, you should create a nested static `CompoundKey` class
+
+```java
+class Person {
+  private String name;
+  private int age;
+  private int shoeSize;
+  private boolean isMarried;
+  private String favoriteMovie;
+  private String nationality;
+  private String favoriteFruit;
+  private String address;
+
+  // ... implementation omitted
+}
+
+String compoundKey = "Shayang:Batman:41:Orange"
+
+public String makeCompoundKey(Person p) {
+  return new StringJoiner(":")
+    .add(p.name)
+    .add(p.favoriteMovie)
+    .add(Integer.toString(p.shoeSize))
+    .add(p.favoriteFruit)
+    .toString()
+}
+
+public getFavoriteMovieFromCompoundKey(String key) {
+  return key.split(":")[1];
+}
+```
+
+### Beware the Performance of String Concatenation
+
+String concatenation by `+` is slow when doing it repeatedly because each created string is immutable. Use `StringBuilder` when performance matters. `StringBuffer` is a thread-safe implementation of `StringBuilder`, which introduces unnecessary overhead when used in a single-threaded process.
+
+### Refer to Objects by Their Interfaces
+
+If appropriate interfaces exist, parameters, return types, variables, fields should all be declared using interface types. It will make your program more flexible to developers and robust to clients.
+
+### Prefer Interfaces to Reflection
+
+Reflexction offers programmatic access to arbitrary classes:
+* Given any object, you can obtain `Constructor/Method/Field instances` representing the object's `constructors/methods/fields`
+* Given the name of a specific class, you can instantiate an instance when its interface is known but its implementation class is unknown to you at Compile time. __The below example is actually the best practice to use reflection.__
+
+```java
+public class MainExample {
+
+  // Reflective instantiation with interface access
+  public static void main(String[] args) {
+
+    // Translate the class name into a Class object
+    Class<? extends Set<String>> cl = null;
+    try {
+      cl = (Class<? extends Set<String>>) Class.forName(args[0]);
+    } catch (ClassNotFoundException e) {
+      fatalError("Class not found");
+    }
+
+    // Get the constructor
+    Constructor<? extends Set<String>> cons = null;
+    try {
+      cons = cl.getDeclaredConstructor();
+    } catch (NoSuchMethodException e) {
+      fatalError("No parameterless constructor");
+    }
+
+    // Instantiate the set
+    Set<String> s = null;
+    try {
+      s = cons.newInstance();
+    } catch (IllegalAccessException e) {
+      fatalError("Constructor not accessible");
+    } catch (InstantiationException e) {
+      fatalError("Class not instantiable");
+    } catch (InvocationTargetException e) {
+      fatalError("Constructor threw " + e.getCause());
+    } catch (ClassCastException e) {
+      fatalError("Class doesn't implement Set");
+    }
+
+    // Exercise the instance
+    s.addAll(Arrays.asList(args).subList(1, args.length));
+  }
+
+  private static void fatalError(String msg) {
+    System.err.println(msg);
+    System.exit(1);
+  }
+}
+```
+
+The above demo code involves 6 different Runtime exceptions and instantiates an object using 25 lines of code (extremely verbose). But if you want to work with a class unknown at Compile time, you should use reflection so far as to instantiate an object and access the object using some interface or super class that's known at Compile time.
+
+__Cons of Using Java Reflection__
+* lose Compile time type checking
+* clumsy code to perform reflective access
+* create 10 times performance burden
+
+### Use Native Methods Judiciously
+
+People used to use __Java Native Interface (JNI)__ to call native methods written in C/C++ for performance. They provide access to platform specific facilities such as registry and native libraries.
+
+Now it is unnecessary as JVM became comparable in performance. Plus native memory usage is not tracked by `Garbage Collector` and thus native methods are not safe.
+
+### Don't Optimize Prematurely
+
+When you start off writing a program, design with encapsulation being the highest priority, rather than performance. However, avoid designs that limit performance because architectural performance bottleneck cannot be erased without rewriting the whole thing. Usually, good performance comes with good designs.
+
+More specifically,
+* implementation details can be optimized later.
+* the components that specify interactions between components and/or with external dependencies are the most difficult to change, such as APIs and persistent data formats.
+* using profiling tools and/or JMH (microbenchmarking framework) to measure the performance before any serious optimization.
+
+### Adhere to Generally Accepted Naming Conventions
+
+Definitive Guide: [The Java Language Specification](https://docs.oracle.com/javase/specs/).
+
+In general:
+* Instantiable classes are noun phrases such as `Thread, PriorityQueue`
+* Non-instantiable utility classes are plural noun phrases, such as `Collections`
+* Interfaces are noun phrases such as `Collection` or adjective phrases such as `Comparable`
+* Methods are verb phrases, such as `getSize(), isEmpty()`
+  * Type converting methods are like `toString(), toArray(), asList()`
+  * Static factory methods names are like `.of(), .from(), .valueOf(), .getInstance(), .newInstance()`
+  * Java bean `Getter & Setter` are simplified as `car.speed()` and `car.speed(60)`
+* Naming conventions for fields and local variables are less obvious
+
+
+Some examples
+
+| Identifier Type | Example |
+| :----: | :----: |
+| Package or Module | org.junit.jupiter.api.com, com.google.common.collect |
+| Class or Interface | Stream, FutureTask, LinkedHashMap, HttpClient |
+| Method or Field | remove, groupingBy, getCrc |
+| Constant Field | MIN_VALUE, NEGATIVE_INFINITY |
+| Local Variable | i, denom, houseNum, concurrentTask |
+| Type Parameter | T, E, K, V, X, R, T1, T2 |
+
+Note
+* T for arbitrary type
+* E for element type of a collection
+* K, V for key type and value type of a map
+* X for exception
+* R for return type
+* T1, T2 for a sequence of arbitrary types
+
+# Exceptions
+
+### Use Exceptions Only for Exceptional Conditions
+
+Exceptions are, as their name implies, to be used only for exceptional conditions; they should never be used for ordinary control flow. A well-designed API must not force its clients to use exceptions for ordinary control flow.
+
+For example, what if `Iterable` doesn't have `boolean hasNext()` API? What would be the termination condition for an iteration?
+```java
+// Horrible abuse of exceptions. Don't ever do this!
+try {
+  while (true) {
+    iterator.next()
+  }
+} catch (NoSuchElementException e) {
+  // pass
+}
+```
+
+Side note to introduce __state-dependent method and state-testing method__: To generalize this example, a class with a "state-dependent" method such as `iterator.next()` should have a separate "state-testing" method such as `iterator.hasNext()`. Note that such design doesn't work out in concurrent scenarios without external synchronizations. An alternative is to have a distinguished return value such as empty `Optional` for the state-dependent method.
+
+### Use Checked Exceptions for Recoverable Conditions and Runtime Exceptions for Programming errors
+
+__Notes__
+* Throw checked exceptions when you demand them being caught and handled in the downstream process.
+* Throw runtime exceptions when there is a programming error. For example, a client violates the API contract.
+* When in doubt, throw runtime exceptions according to [Avoid Unnecessary Use of Checked Exceptions](#avoid-unnecessary-use-of-checked-exceptions).
+* Error is reserved for the use by the JVM to indicate resource deficiency, invariant failures or other conditions that make it impossible to continue execution.
+
+### Avoid Unnecessary Use of Checked Exceptions
+
+__Checked exceptions__ forces programmers to deal with the problems, enhancing reliability. The cost of throwing checked exceptions are:
+* it requires a client to deal with it
+* it conflicts with stream API
+
+Looking back at [Use Exceptions Only for Exceptional Conditions](#use-exceptions-only-for-exceptional-conditions), two alternatives are:
+* return empty `Optional` rather than throwing
+* "state-testing" based refactor
+
+But either way, it loses the rich info that comes with the checked exceptions.
+
+```java
+// before refactor
+try {
+  obj.action(args)
+} catch (CheckedException e) {
+  // handle
+}
+
+
+// after refactor
+if (obj.isActionable(args)) {
+  obj.action(args)
+} else {
+  // handle
+}
+```
+
+__When to use checked exceptions?__
+* exceptional conditions can't be prevented by proper use of the API (enforced by Runtime exception).
+* throwing checked exceptions can pass down useful info to make the downstream logic clearer.
+
+### Favor the Use of Standard Exceptions
+
+| Exception | Use |
+| :----: | :----: |
+| IllegalArgumentException | Non-null parameter value is inappropriate |
+| IllegalStateException | Object state is inappropriate for method invocation |
+| NullPointerException | Parameter value is null where prohibited |
+| IndexOutOfBoundsException | Index parameter value is out of range |
+| ConcurrentModificationException | Concurrent modification of an object has been detected where prohibited |
+| UnsupportedOperationException | Object does not support method |
+| ArithmeticException | Denominator is zero |
+| NumberFormatException | Unable to convert a string into a number |
+
+### Throw Exceptions Appropriate to the Abstraction
+
+__What is exception propagation?__ and how does it hurt if not done appropriately?
+```java
+class B {
+
+  // class implementation omitted
+
+  protected void helper() throws CheckedExceptionB {
+    // method implementation omitted
+  }
+}
+
+class C {
+
+  // class implementation omitted
+
+  protected void helper() throws CheckedExceptionC {
+    // method implementation omitted
+  }
+}
+
+
+class A extends B {
+
+  // class implementation omitted
+
+  public void invokeApi() throws CheckedExceptionB {
+    helper()
+  }
+}
+
+// Client Side Code
+try {
+  new A().invokeApi()
+} catch (CheckedExceptionB b) {
+  // handle
+}
+
+// Server Side Change Breaks Client Side Code
+class A extends C {
+
+  // class implementation omitted
+
+  public void invokeApi() throws CheckedExceptionC {
+    helper()
+  }
+}
+```
+
+__How exception translation helps?__
+```java
+// Original Implementation
+class A extends B {
+
+  // class implementation omitted
+
+  public void invokeApi() throws CheckedExceptionA {
+    try {
+      helper()
+    } catch (CheckedExceptionB b) {
+      throw new CheckedExceptionA(b) // exception chaining
+    }
+  }
+}
+
+// Client Side Code
+try {
+  new A().invokeApi()
+} catch (CheckedExceptionA a) {
+  // handle
+}
+
+// Changed Implementation Doesn't Break Client Side Code
+class A extends C {
+
+  // class implementation omitted
+
+  public void invokeApi() throws CheckedExceptionA {
+    try {
+      helper()
+    } catch (CheckedExceptionC c) {
+      throw new CheckedExceptionA(c) // exception chaining
+    }
+  }
+}
+```
+
+__Note:__ "exception chaining" helps pass low-level exception info to high-level exception. Most standard exceptions implementation has "chaining-aware" constructors.
+
+### Document All Exceptions Thrown by Each Method
+
+Use the JavaDoc `@throws` tag to document each __checked__ exception that a method can throw in terms of its conditions under which it throws.
+
+### Include Failure-capture Information in Detail Messages
+
+When throwing exceptions, include as much info contributing to the exceptional case as possible. For example, when you throw `IndexOutOfBoundsException`, you should include the lowerBound, upperBound and indexValue. All of them can go wrong.
+
+A better way to achieve this is to require these essential info to be included in the exception `constructor`, as well as in its `toString()` method.
+
+### Strive for Failure Atomicity
+
+Generally, a failed method invocation should leave the object in the state that it was __prior to the invocation__. A method with this property is __failure-atomic__. The applicables of the property can range from exception handlings to data persistence.
+
+Several ways to achieve this:
+* Use immutable objects
+* Perform checks before making changes so that it doesn't fail
+* Perform operations on a temporary copy of the modifiable and then swap (atomic operation)
+* Intercept the failure that occurs during an operation and roll back the persistent data structure
+
+### Don't Ignore Exceptions
+
+The title says if you catch an exception, don't leave the catch block empty. Otherwise, you are ignoring it. If you intentionally do so, name the exception variable "ignored" and leave a comment why it's ignored.
+
+# Concurrency
+
+### Synchronize access to shared mutable data
+
+Can you see why the following program never terminates?
+```java
+// Broken program. Never terminates.
+public class StopThread {
+
+  private static boolean stopRequested;
+
+  public static void main(String[] args) throws InterruptedException {
+    Thread backgroundThread = new Thread(() -> {
+      int i = 0;
+      while (!stopRequested) {
+        i++;
+      }
+    });
+
+    backgroundThread.start();
+
+    TimeUnit.SECONDS.sleep(1);
+
+    stopRequested = true;
+  }
+}
+```
+
+The above program never terminates because, without explicit synchronization, JVM does the following optimization known as "hoisting":
+```java
+// before transformation
+while (!stopRequested) {
+  i++;
+}
+
+// after transformation
+// JVM assumes nothing in the current thread changes the value of "stopRequested"
+// then JVM decides not to evaluate the value of "stopRequested" at each iteration
+if (!stopRequested) {
+  while (true) {
+    i++;
+  }
+}
+```
+
+Now things become different with synchronization.
+```java
+// Properly synchronized cooperative thread termination
+public class StopThread {
+
+  private static boolean stopRequested;
+
+  private static synchronized void requestStop() {
+    stopRequested = true;
+  }
+
+  private static synchronized boolean stopRequested() {
+    return stopRequested;
+  }
+
+  public static void main(String[] args) throws InterruptedException {
+    Thread backgroundThread = new Thread(() -> {
+      int i = 0;
+      while (!stopRequested()) {
+        i++;
+      }
+    });
+
+    backgroundThread.start();
+
+    TimeUnit.SECONDS.sleep(1);
+
+    requestStop();
+  }
+}
+```
+
+The `synchronized` keyword not only ensures "mutual exclusion" meaning that only a single thread executes the synchronized block of code at a time, it also ensures that any thread entering the synchronized block sees the effects of all previous modifications that were guarded by the same lock (communication effect).
+
+Note that synchronization is not guaranteed to work unless both READ and WRITE operations are synchronized (as demonstrated in the above example).
+
+Further note that in this use case, the `synchronized` method is atomic regardless of synchronization. In other words, the `synchronized` keyword here is used solely for its communication effect, not for mutual exclusion.
+
+With that being said, the performance overhead can be reduced by using `volatile` keyword as it guarantees that any thread reading the `volatile` field will see the most recently written value as demonstrated below.
+
+```java
+// Cooperative thread termination with a volatile field
+public class StopThread {
+
+  private static volatile boolean stopRequested;
+
+  public static void main(String[] args) throws InterruptedException {
+    Thread backgroundThread = new Thread(() -> {
+      int i = 0;
+      while (!stopRequested) {
+        i++;
+      }
+    });
+
+    backgroundThread.start();
+
+    TimeUnit.SECONDS.sleep(1);
+
+    stopRequested = true;
+  }
+}
+```
+
+Carefully note that `volatile` works incredibly well in the above example because READ (`while (!stopRequested)`) and WRITE (`stopRequest = true`) operations are __atomic__. When one of them is not atomic, things will go wrong. For example:
+```java
+// Broken! It requires synchronization.
+class SerialNumberGenerator {
+
+  private static volatile int nextSerialNumber = 0;
+
+  public static int generate() {
+    return nextSerialNumber++;
+  }
+}
+```
+
+The problem is that increment operation `++` is not atomic. It reads the value, increment and write back the new value. So some other thread can interleave the operations. "Atomic Primitives" as defined in `java.util.concurrent.atomic` are designed for situations like this. Using "Atomic Primitives" provides better performance than using `synchronized` keyword as it is internally lock free.
+
+```java
+class SerialNumberGenerator {
+
+  private static volatile AtomicLong nextSerialNumber = new AtomicLong();
+
+  public static long generate() {
+    return nextSerialNumber.getAndIncrement();
+  }
+}
+```
+
+### Avoid Excessive Synchronization
+
+Some principles to write synchronized block.
+
+__Principle 1:__ Inside a synchronized block, don't invoke a method that's designed to be overriden, or one provided by a client in the form of a function object. It's dangerous if the implementation is not under full control. For example, the implementation can start a new thread and try to acquire the lock from "this" class, which would fail if the orginal thread is holding the lock, which then turns into a dead lock situation.
+
+__Principle 2:__ Do as little work as possible inside synchronized block.
+
+__Principle 3:__ If you are debating between the following two designs:
+* having a class with synchronized internals, such as `StringBuffer, ConcurrentHashMap`
+* having a class that doesn't take care of synchronization but it allows client to place synchronization from external.
+
+Take the second design unless you can achieve significantly higher concurrency with internal synchronization implementation, which is possible by using various techniques, such as "lock splitting", "lock stripping", "non-blocking concurrency control", etc but usually unnecessary.
+
+Taking the first design will incur unnecessary overhead when the class is used where concurrency is not needed. However taking 2 always allows you to synchronize whenever needed.
+
+### Prefer Executors, Tasks and Streams to Threads
+
+A complete guide on this topic: Java Concurrency In Practice.
+
+__ThreadPoolExecutor__ is the most general executor that allows you to basically config anything to meet your concurrent needs.
+
+__SingleThreadExecutor__ implements "single threaded work queue" pattern.
+
+__ScheduledThreadPoolExecutor__ allows you to schedule tasks to run periodically or at a particular time.
+
+__CachedThreadPool__ starts as many threads as new tasks come in. It gives horrible throughput when traffic is more than what the server can handle. Because CPU spends most of its time doing context switching instead of actual work.
+
+__FixedThreadPool__ comes to rescue under the above circumstances.
+
+__ForkJoinPool__ allows executors to "steal" tasks from each other even across different threads, resulting in better CPU utilization. `Stream.parallel()` API is written on top of ForkJoinPool.
+
+Note that `Callable` is just a `Runnable` capable of returning a value and/or throwing an exception.
+
+### Prefer Concurrency Utilities to Wait and Notify
+
+`String.intern()` (introduced in [Avoid Creating Unnecessary Objects](#avoid-creating-unnecessary-objects)) can be implemented using `ConcurrentMap` as below example shows:
+```java
+public class String {
+
+  private static final ConcurrentMap<String, String> map = new ConcurrentHashMap<>();
+
+  public static String intern(String s) {
+    String previousValue = map.putIfAbsent(s, s);
+    return previousValue == null? s : previousValue;
+  }
+}
+```
+
+`map.putIfAbsent()` is a "state-dependent" modify operation made __atomic__ by using `synchronized` keyword on its partial implementation. However `map.put()` is not synchronized. In concurrent scenarios it will incur racing condition where multiple threads are racing to update the same key. Beside `.putIfAbsent()`, `.reduce()` and `.compute()` implementations are also synchronized.
+
+`ConcurrentHashMap` is one of the high-performance concurrent implementations of the stardard `Map` interface. Same thing goes for other `Collection` interfaces, such as `List, Queue` etc. These implementations manage their own synchronizations internally. Therefore, applying additional synchronization from external only slows it down.
+
+These concurrent collections are 1/3 of the `java.util.concurrent` offerings, the other 2/3 of it are:
+* Executor Framework ([Prefer Executors, Tasks and Streams to Threads](#prefer-executors,-tasks-and-streams-to-threads))
+* synchronizers
+
+Synchronizers include:
+* `CountDownLatch` (most commonly used)
+* `CyclicBarrier`
+* `Phaser`
+
+The following example helps to understand how `CountDownLatch` works. The example is often used to reproduce concurrency bugs as it can force arbitrary number of threads to perform some piece of logic concurrently.
+
+```java
+public class ConcurrentExecution {
+
+  // Simple Framework for timing concurrent executions
+  public static long time(Executor executor, int concurrency, Runnable runnable) throws InterruptedException {
+
+    CountDownLatch ready = new CountDownLatch(concurrency);
+    CountDownLatch start = new CountDownLatch(1);
+    CountDownLatch done = new CountDownLatch(concurrency);
+
+    for (int i = 0; i < concurrency; i++) {
+      executor.execute(() -> {
+        ready.countDown(); // acknowledge ready
+        try {
+          start.await(); // wait here till @{code start.countDown()}
+          runnable.run();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();;
+        } finally {
+          done.countDown(); // acknowledge done
+        }
+      });
+    }
+
+    ready.await(); // wait till all executors acknowledge ready
+
+    long startNanos = System.nanoTime();
+
+    start.countDown(); // fire
+
+    done.await(); // wait till all executors acknowledge done
+
+    return System.nanoTime() - startNanos;
+  }
+}
+```
+
+For legacy API, such as `wait(), notify(), notifyAll()`, they are replaced by the above `java.util.concurrent` offerings. In case you need to maintain legacy code, make sure you always invoke `.wait()` from within a while loop using the standard idiom. The loop serves to test the condition before and after waiting. Testing the condition before waiting and skipping if the condition already holds are necessary to ensure __liveness__. Testing the condition after waiting and waiting again if the condition does not hold are necessary to ensure __safety__.
+
+```java
+// The stardard idiom for using the wait method
+synchronized (obj) {
+  while (<condition does not hold>) {
+    obj.wait() // release lock and reacquires on wakeup
+    // perform action appropriate to condition
+  }
+}
+```
+
+Under this idiom. One should always use `notifyAll()` rather than `notify()`. Because it guarantees that you will wake the threads that need to be awakened. You might wake some other threads too but this won't affect the correctness of your program because these threads will check the condition for which they are waiting, finding it false and then it will continue waiting.
+
+### Document Thread Safety
+
+Thread Safety Levels
+1. Immutable
+2. Unconditionally thread safe (`AtomicInteger, ConcurrentHashMap`)
+3. Conditionally thread safe (`collections.synchronizedMap` whose iterator requires external synchronization)
+4. Not thread safe (`ArrayLsit, HashMap`)
+
+### Use Lazy Initialization Judiciously
+
+Using or not using lazy initialization is determined by whether it brings performance benefits. In concurrent programming, lazy initialization is tricky.
+
+For __instance field lazy initialization__, use "synchronized accessor idiom":
+```java
+private FieldType field;
+
+private synchronized FieldType getField() {
+  if (field == null) {
+    field = computeFieldValue();
+  }
+  return field;
+}
+```
+
+For __static field lazy initialization__, use "holder class idiom":
+```java
+private static class FieldHolder {
+  static final FieldType field = computeFieldValue();
+}
+
+private static FieldType getField() {
+  return FieldHolder.field;
+}
+```
+
+For __instance field lazy initialization__ with performance improvement, use "double-check idiom". Two variants of the idiom are:
+* single-check idiom
+* racy single-check idiom
+
+### Don't Depend on the Thread Scheduler
+
+The best way to write a robust, responsive, portable program is to ensure that the average number of `runnable` threads is not significantly greater than the number of processors.
+
+The main technique for keeping the number of `runnable` threads low is to have each thread do some useful work and the wait for more. Threads should not run if they are not doing useful work.
+
+The following example demonstrates what is __busy-wait__:
+```java
+// Awful CountDownLatch implementation - busy-waits incessantly
+public class SlowCountDownLatch {
+
+  private int count;
+
+  public SlowCountDownLatch(int count) {
+    if (count < 0) {
+      throw new IllegalArgumentException(count + " < 0");
+    }
+    this.count = count;
+  }
+
+  public void await() {
+    while (true) {
+      synchronized (this) {
+        if (count == 0) {
+          return ;
+        }
+      }
+    }
+  }
+
+  public synchronized void countDown() {
+    if (count != 0) {
+      count--;
+    }
+  }
+}
+```
 
 # Bottom line
 # Bottom line
