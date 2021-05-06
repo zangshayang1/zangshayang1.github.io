@@ -1936,7 +1936,54 @@ public class SlowCountDownLatch {
 }
 ```
 
-# Bottom line
-# Bottom line
-# Bottom line
-# Bottom line
+# Serialization
+
+### Prefer Alternatives to Java Serialization
+
+__A fundamental problem with Java serialization__ is that its attack surface is too big to protect, and constantly growing: Object graphs are deserialized by invoking the `readObject` method on an `ObjectInputStream`. This method is essentially a magic constructor that can be made to instantiate objects of almost any type on the class path, so long as the type implements the `Serializable` interface. In the process of deserializing byte stream, this method can execute code from any of these types, so the code for all of these types is part of the attack surfaces.
+
+Some problem examples:
+* Java serialization is widely used by Java subsystems, such as __Remote Method Invocation (RMI)__, __Java Management Extension (JMX)__ and __Java Messaging System (JMS)__.
+* Deserialization of untrusted input streams can result in __Remote Code Execution (RCE)__.
+* Deserialization of 100-level nested `HashSet` instance can result in __Denial-of-Service attack (DOS)__, aka deserialzation bomb.
+
+__What do you do?__ Don't use it.
+
+__What do you use?__ JSON and Protobuf.
+
+The purpose of serialization and deserialization is to fulfill __cross-platform high-performance translation between structured data and byte/char sequences__. The leading cross-platform structured data representations are __JSON and Protobuf__. What they have in common is that they are far simpler than Java serialization. They don't support automatic serialization and deserialization of arbitrary object graphs. Instead they support simple, structured data-objects consisting of a collection of attribute-value pairs. Only a few primitives and array data types are supported. This simple abstraction turns out to be sufficient for building extremely powerful distributed systems.
+
+__JSON vs Protobuf__
+* Originally JSON was designed for browser-server communication, and Protobuf was designed to storing and interchanging structured data between servers.
+* JSON is text-based, whereas Protobuf is binary.
+* JSON is exclusively a data representation, whereas Protobuf offers "schemas (types)" to document and enforces appropriate usage.
+
+### Implement Serilizable with Great Caution
+
+A major cost of implementing `Serialzable` is that it decreases the flexibility to change a class's implementation once it has been released.
+
+A second cost of implemnting `Serializable` is that it increases the likelihood of bugs and security holes. 
+
+A third cost of implementing `Serializable` is that it increases the testing burden associated with releasing a new version of a class.
+
+Implementing `Serialzable` is not a decision to be undertaken lightly.
+
+Classes designed for inheritance should rarely implement `Serializable`, and interfaces should rarely extend it.
+
+Inner classes should not implement `Serializable`.
+
+### Consider Using a Custom Serialized Form
+
+Trivial details.
+
+### Write readObject Methods Defensively
+
+Trivial details.
+
+### For Instance Control, Prefer enum Types to readResolve
+
+Trivial details.
+
+### Consider Serialization Proxies Instead of Serialized Instances
+
+Trivial details.
