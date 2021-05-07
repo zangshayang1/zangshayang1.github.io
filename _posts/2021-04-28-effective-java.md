@@ -10,13 +10,19 @@ tag: java
 {:toc}
 
 
+
+Last Update: 05-06-2021
+
 # Creating and Destroying Objects
 
 ### Consider Static Factory Methods Instead of Constructors
 
+__Tag__
+* Static Factory Method
+
 __Pros of Static Factory Methods__
 * Having different names for different instantiations.
-* Provide commonly used constant as a singleton.
+* Provide commonly used constant as an immutable singleton.
 * Different static factory methods or single parameterized static factory method can return different subtypes. For example:
   * `Collections.singletonList(T o)`
   * `Collections.emptySet()`
@@ -29,6 +35,9 @@ __Note__
 The above characteristics make static factory method a perfect candidate for playing the Provider role in Service-Provider pattern, where a Provider decouples Client and Service so that Client becomes unaware of the service implementation.
 
 ### Consider a Builder when Faced with Many Constructor Parameters
+
+__Tag__
+* Hierarchical Builder Pattern
 
 __Builder vs Telescoping vs JavaBean__  
 * Builder pattern is better than telescoping pattern where the number of parameters equal to the number of constructors resulting in many hard-to-follow instantiations.
@@ -132,9 +141,15 @@ Typically a static utility class is non-instantiable. Having a private construct
 
 ### Prefer Dependency Injection to Hardwiring Resources
 
-Static utility classes and singletons are inappropriate for classes whose behavior is parameterized by an underlying resource. For example, SpellChecker depends on an underlying dictionary. What is required to support multiple instances of a class with each of them using the underlying resource desired by the client? A simple pattern that satisfy this requirement is to pass the resource into the constructor when creating a new instance. This is one form of dependency injection.
+Static utility classes and singletons are inappropriate for classes whose behavior is parameterized by an underlying resource. For example, `SpellChecker` depends on an underlying dictionary. What is required to support multiple instances of a class with each of them using the desired underlying resource? A simple pattern that satisfy this requirement is to pass the resource into the constructor when creating a new instance. __This is one form of dependency injection__.
 
 ### Avoid Creating Unnecessary Objects
+
+__Tag__
+* String Constant Pool
+* String Creation & Storage
+* String Immutability
+* String Intern
 
 There are two ways to create a string.
 * `s1 = "haha"`
@@ -157,7 +172,10 @@ So...
 
 ### Eliminate Obsolete Object References
 
-The following snippet is from `ArrayList` implementation source code. Notice that as we remove item at some index, we will null out the reference by `elementData[--size] = null`. It is necessary because otherwise the reference becomes obsolete and escaped from garbage collection (causing memory leak).
+__Tag__
+* Obsolete Reference Escaping GC
+
+The following snippet is from `ArrayList` implementation source code. Notice that as we remove item at some index, we will __null out__ the reference by `elementData[--size] = null`. It is __necessary__ because otherwise the reference becomes obsolete and escaped from garbage collection (causing memory leak).
 
 ```java
 public class ArrayList<E> extends AbstractList<E>
@@ -194,6 +212,9 @@ Why? Exception thrown in `final` block will completely overwrite the exception t
 
 ### Obey the General Contract When Overriding equals
 
+__Tag__
+* Override `equals()`
+
 Common Methods
 * `equals`
 * `hashCode`
@@ -211,18 +232,24 @@ When override "equals" method, the implementation must hold the following true:
 
 ### Always Override toString
 
+__Tag__
+* Override `toString()`
+
 Note
-* While it isn't as critical as obeying the `equals` and `hashCode` contracts in previous item, provide a good toString implementation makes your class much more pleasant to use and makes systems using the class easier to debug.
+* While it isn't as critical as obeying the `equals` and `hashCode` contracts in previous item ([Obey the General Contract When Overriding equals](#obey-the-general-contract-when-overriding-equals)), providing a good toString implementation makes your class much more pleasant to use and makes systems using the class easier to debug.
 * When practical, the `toString` method should return all the interesting info contained in the object.
 * Whether or not you decide to specify the format, you should clearly document you intentions.
-* Whether or not you specify the format, provide programmatic access to the info contained in the value returned by `toString`.
+* Whether or not you specify the format, you should provide programmatic access to the info contained in `toString` returns.
 
 ### Override clone Judiciously
+
+__Tag__
+* Override `clone()`
 
 Note
 * A class implementing `Cloneable` is expected to provide a public `clone` method.
 * Immutatble classes should never provide a `clone` method.
-* Always call `super.clone()` for replication of the info contained in `super`, rather than calling super's constructor unless this class is final.
+* Always call `super.clone()` for replication of the info contained in `super`, rather than calling super's constructor unless this class is `final`.
 * Always return a deep copy.
 * If you want clone functionality on a class that doesn't implement `Cloneable`, use Copy Constructor (aka Conversion Constructor). For example
   * `public HashMap(Map<? extends K, ? extends V> m)`
@@ -260,10 +287,14 @@ __Pros of Immutable Classes__
 * Shared frequently used singletons reduce memory footprint
 
 __Cons of Immutable Classes__
-* Multi-step operations generate one object at each step. That's why we use `stringBuilder` to concatenate strings.
-  * `stringBuilder` is not thread-safe while `stringBuffer` is
+* Multi-step operations generate one object at each step. That's why we use `StringBuilder` to concatenate strings.
+  * `StringBuilder` is not thread-safe while `StringBuffer` is
 
 ### Favor Composition Over Inheritance
+
+__Tag__
+* Composition
+* Inheritance
 
 Inheriting from ordinary concrete classes across packages is dangerous. Inheritance makes component fragile. Even for abstract classes that are designed for extension, it often became inevitable that subclasses evolve along with superclass, which defeats the purpose of encapsulation.
 
@@ -271,23 +302,42 @@ If you just want to "share" functionalities, favor composition over inheritance 
 
 ### Design and Document for Inheritance or else Prohibit it
 
+Title says it all.
+
 ### Prefer Interfaces to Abstract Classes
 
-Interface is not as hierarchical as abstract class, providing flexibility and robustness. For example, `public class HashMap<K,V> extends AbstractMap<K,V>` where the abstract class provide skeleton implementation to ease the implementation burden for subclasses (Template Method pattern).
+__Tag__
+* AbstractMap
+* Map Interface
+
+Interface is not as hierarchical as abstract class, providing flexibility and robustness. 
+
+For example:
+* `public class HashMap<K,V> extends AbstractMap<K,V>` where the abstract class provide skeleton implementation to ease the implementation burden for subclasses (Template Method pattern).
+* `public abstract class AbstractMap<K,V> implements Map<K,V>` where the interface only provides function signatures.
 
 ### Design Interfaces for Posterity
 
 `Default Method` was added to interface in Java 8. It enables implementation of subroutines in an interface that are common to implementors, easing the burden of implementation of these subclasses.
 
-However it introduced breaking changes as well. For example, `Collection` interface has default implementation of `removeIf` that takes in a `Predicate` and call implementor's `remove` method and `iterator` method. But this default implementation is not synchronized while this interface is implemented by `SynchronizedCollection`. Now that `SynchronizedCollection` has the obligation to override `removeIf` to ensure synchronization when its subclasses call `removeIf`. So the release of the interface with such default method will bring in implementations that might not behave as expected if not overriden.
+However it introduced breaking changes as well. For example, `Collection` interface has default implementation of `removeIf()` that takes in a `Predicate` and call implementor's `remove()` method and `iterator()` method. But this default implementation is not synchronized while this interface is implemented by `SynchronizedCollection`. Now that `SynchronizedCollection` has the obligation to override `removeIf()` to ensure synchronization when its subclasses call `removeIf()`. So the release of the interface with such default method will bring in implementations that might not behave as expected if not overriden.
 
 ### Use Interface Only to Define Types
 
+Title says it all.
+
 ### Prefer Class Hierarchies to Tagged Classes
+
+Title says it all.
 
 ### Favor Static Nested Classes Over Nonstatic
 
+__Tag__
+* Nested Static Class
+* Nested Non-static Class
+
 __Nested Classes__  
+
 A nested class should exist only to serve its outer class. Otherwise, declare a top-level class instead.
 
 Examples of static nested class:
@@ -324,9 +374,13 @@ One source file contains one and only one top-level class.
 
 ### Don't Use Raw Types
 
+__Tag__
+* Raw Types
+* Generic Types
+
 Generic type info will be erased during Runtime.
 
-Generics were introduced in Java 5. Before it, one can put anything into a raw type `List` without Compile Exception, which then results in Runtime Exception when you iterate over the `List` and cast them into some desired type. For example:
+Generics were introduced in Java 5. Before it, one can put anything into a raw type `List` without Compile exceptions, which then results in Runtime exceptions when you iterate over the `List` and cast them into some desired type. For example:
 
 ```java
 private final Collection stamps = new ArrayList<>();
@@ -342,8 +396,9 @@ while (i.hasNext()) {
 ```
 
 Typed `List<T>` makes the program safe and cleaner. For example:
+
 ```java
-private final Collection stamps = new ArrayList<>();
+private final Collection<Stamp> stamps = new ArrayList<>();
 
 stamps.add(new Stamp());
 stamps.add(new Coin()); // Compile Error: incompatible types
@@ -370,6 +425,7 @@ Two exceptions of "Don't Use Raw Types":
   * `o instanceof Set<E> //invalid`
 
 However, casting into raw types is absolutely wrong:
+
 ```java
 if (o instanceof Set) {
   Set<?> s1 = (Set<?>) o // valid
@@ -382,6 +438,10 @@ if (o instanceof Set) {
 If you can't eliminate every unchecked warning but you can prove that the code that provoked the warning is `typesafe`, then suppress the warning with an `@SuppressWarnings("unchecked")` annotation.
 
 ### Prefer List to Array
+
+__Tag__
+* Reifiable Array
+* Non-reifiable List
 
 __Covariant vs Invariant__  
 Arrays are covariant meaning `Subtype[]` is a subtype of `Supertype[]`, while Lists are invariant meaning `List<Subtype>` is __not__ a subtype of `List<Supertype>`. Invariant is safer as in:
@@ -434,7 +494,10 @@ For more on this topic, please refer to [Combine Generics and Varargs Judiciousl
 
 ### Favor Generic Types
 
-How to work around generic array creation error?
+__Tag__
+* Generic Array Creation
+
+How to work around __generic array creation error__?
 
 ```java
 public class Stack<E> {
@@ -510,7 +573,13 @@ In generally, `List` is preferred to `array` but some provided generic types are
 
 ### Favor Generic Methods
 
-Writing generic method:
+__Tag__
+* Generic Method
+* Generic Singleton Factory Method
+* Recursive Type Bound
+
+___Writing generic method__:
+
 ```java
 // raw type method
 public static Set union(Set s1, Set s2) {
@@ -527,9 +596,8 @@ public static <E> Set<E> union(Set<E> s1, Set<E> s2) {
 }
 ```
 
-The use of wild card will be discussed in [Use Bounded Wild Card to Increase API Flexibility](#use-bounded-wild-card-to-increase-api-flexibility).
+__Generic singleton factory method__ is used for function singleton. For example:
 
-Generic singleton factory method is used for function singleton. For example:
 ```java
 public class Collections {
 
@@ -564,7 +632,8 @@ public class Collections {
 }
 ```
 
-Recursive type bound showcased in the generic `max` function:
+__Recursive type bound__ showcased in the generic `max` function:
+
 ```java
 // Using a recursive type bound to express mutual comparability
 public static <E extends Comparable<E>> E max(Collection<E> c) {
@@ -580,9 +649,14 @@ public static <E extends Comparable<E>> E max(Collection<E> c) {
 }
 ```
 
+__Note__ that the above `max` example will be extended to include the use of wild card in the next item [Use Bounded Wild Card to Increase API Flexibility](#use-bounded-wild-card-to-increase-api-flexibility).
+
 ### Use Bounded Wild Card to Increase API Flexibility
 
-Recall the static union example in [Favor Generic Method](#favor-generic-methods)? Consider the following use case, notice how the use of wild card in the function signature increased its flexibility.
+__Tag__
+* Bounded Wild Card
+
+Recall the static union example in [Favor Generic Method](#favor-generic-methods)? Consider the following use case, notice how the use of __wild card__ in the function signature increased its flexibility.
 ```java
 Integer extends Number;
 Double extends Number;
@@ -639,7 +713,7 @@ q.popAll(numbers)
 // numbers: [1, 3, 5, 2.0, 4.0, 6.0]
 ```
 
-Recall the recursive type bound example (implementation of `max`) in [Favor Generic Method](#favor-generic-methods)? The following revised version provides better flexibility as in:
+Recall the __recursive type bound__ example (implementation of `max`) in [Favor Generic Method](#favor-generic-methods)? The following revised version provides better flexibility as in:
 * T doesn't necessarily implement Comparable as long as T's super implements Comparable
 * max() accepts wild-typed element collection as long as the element type extends T
 
@@ -659,7 +733,7 @@ public static <T extends Comparable<? super T>> T max(Collection<? extends T> c)
 
 ### Combine Generics and Varargs Judiciously
 
-Generics + Varargs = Heap Polution.
+__Generics__ + __Varargs__ = Heap Polution.
 
 Varargs allows clients to pass a variable number of arguments to a method. Internally, an array is created to hold these arguments.
 
@@ -667,7 +741,8 @@ It's safe in the case: `public void safeMethod(String... strings)`.
 
 But it becomes unsafe when used jointly with generics, such as `public void unsafeMethod(List<Integer>... integerLists)` Because arrays are covariant, the declaration `List<T>[]` will generate warnings at Compile time. Please refer to [Prefer List to Array](#prefer-list-to-array) for detailed explanations.
 
-It is __unsafe__ when you modify the argument array:
+It is __unsafe__ when you __modify__ the argument array:
+
 ```java
 static void unsafeMethod(List<Integer>... integerLists) {
   List<String> strList = List.of("unsafe");
@@ -726,6 +801,9 @@ A limitation of such heterogeneous container is it cannot be used in generic col
 
 ### Use enums Instead of int Constants
 
+__Tag__
+* Enum Advanced Example
+
 __What are enums?__ Enums are singletons (instance declared during class is defined). Enums are immutable. High-quality implementations of `Comparable` and `Serializable` are provided.
 
 An advanced sample use:
@@ -759,11 +837,19 @@ public enum Operation {
 
 ### Use Instance Fields Instead of Ordinals
 
+Title says it all.
+
 ### Use EnumSet Instead of Bit Fields
 
-If enum constants are frequently used in a set rather than individually, use `EnumSet` like this `text.applyStyle(EnumSet.of(Style.Bold, Style.Italic))`. Why? Internally, if the `EnumSet` has less than 64 constants, the entire set is represented by a single `long`. So the performance is boosted via bitwise operations.
+__Tag__
+* EnumSet
+
+If enum constants are frequently used in a `set` rather than individually, use `EnumSet` like this `text.applyStyle(EnumSet.of(Style.Bold, Style.Italic))`. Why? Internally, if the `EnumSet` has less than 64 constants, the entire set is represented by a single `long`. So the performance is boosted via bitwise operations.
 
 ### Use EnumMap Instead of Ordinal Indexing
+
+__Tag__
+* EnumMap
 
 If you want to group employees by their types:
 * Don't use ordinal to index an array of Set
@@ -796,7 +882,12 @@ public Map<Employee.Type, Set<Employee>> groupByType(Collection<Employee> employ
 
 ### Emulate Extensible enums with Interfaces
 
+Title says it all.
+
 ### Prefer Annotations to Naming Patterns
+
+__Tag__
+* Create/Write Annotations
 
 Prefer `@Test` to naming pattern `test_someFunction()`.
 
@@ -871,6 +962,10 @@ public class SampleTest {
 
 ### Use Marker Interfaces to Define Types
 
+__Tag__
+* Marker Interface
+* Marker Annotation
+
 __Marker annotation vs marker interface__
 A marker interface is an interface that contains no methods or constants declarations. One can use [marker annotation](#prefer-annotations-to-naming-patterns) to achieve the same thing but marker interface still has its advantages.
 
@@ -886,9 +981,13 @@ __Pros of Marker Annotations__
 
 ### Prefer Lambdas to Anonymous Classes
 
-Anonymous class was the primary means to create a function object. Function object, such as Comparator, typically has only one public method. Verbosity of anonymous class makes functional programming in java not very appealing.
+__Tag__
+* Lambda Expression
 
-Since Java 8, functional interface was introduced and `lambda express` became the primary means to implement these interfaces. An example for illustration would be:
+Anonymous class was the primary means to create a function object. __Function object__, such as Comparator, typically has only one public method. Verbosity of anonymous class makes functional programming in java not very appealing.
+
+Since Java 8, functional interface was introduced and __lambda expression__ became the primary means to implement these interfaces. An example for illustration would be:
+
 ```java
 public enum Operation {
   PLUS("+", (x, y) -> x + y),
@@ -945,6 +1044,9 @@ With `public interface ToIntBiFunction<T,U>`, why do we still need `public inter
 
 ### Use Stream Judiciously
 
+__Tag__
+* Stream API
+
 Stream APIs provide succinct expressions for pipelined processing logic. This stage's output is the next stage's input.
 
 __Stream vs Iterative__
@@ -958,15 +1060,19 @@ Stream API provides functional programming syntax, which is concise and easy-to-
 
 ### Prefer Side-effect-free Functions in Streams
 
-The most important part of the streams paradigm is to structure your computation as a sequence of transformations where the result of each stage is as close as possible to a __pure function__ of the result of the previous stage. A pure function is one whose result depends only on its input: it does not depend on any mutable state, nor does it update any state. In order to achieve this, any function objects that you pass into stream operations, both intermediate and terminal, should be free of side-effects.
+__Tag__
+* Common Streaming Operations
+* toMap
 
-Intermediate Operations
+The most important part of the streams paradigm is to structure your computation as a sequence of transformations where the result of each stage is as close as possible to a __pure function__ of the result of the previous stage. A pure function is one whose result depends only on its input: __it does not depend on any mutable state, nor does it update any state__. In order to achieve this, any function objects that you pass into stream operations, both intermediate and terminal, should be free of side-effects.
+
+__Intermediate Operations__
 * filter
 * map
 * sort
 * limit
 
-Terminal Operations
+__Terminal Operations__
 * toMap
 * toList
 * toSet
@@ -1010,9 +1116,13 @@ One problem with `Collection` is that it has upper limit (`Integer.MAX_VALUE`) f
 
 ### Use Caution When Making Streams Parallel
 
+__Tag__
+* Stream Parallel
+* Reference Locality
+
 Stream API provides `.parallel()` to convert a single-threaded streaming process into a multi-threaded one, which involves `spliting/reducing/combining/locking` etc. With the overhead, it provides __potential__ performance improvement (in a multi-core machine).
 
-Internally, the parallelism is realized based on some heuristics. So there is NO guarantee that the converted streaming process will have consistent behavior or return correct results. In other words, the builtin heuristics might or might not cover the computation logic that you have written in `Stream API`. When it doesn't, unexpected behavior might occur.
+Internally, the parallelism is realized based on some _heuristics. So there is NO guarantee that the converted streaming process will have consistent behavior or return correct results. In other words, __the builtin heuristics might or might not__ be sufficient to correctly translate the computation logic that you have written in `Stream API`. When it doesn't, unexpected behavior might occur.
 
 Practically speaking, it rarely provides benefits over cost. However we need to understand that performance gains from parallelism are best on streams over `Arrays/IntIterables/LongIterables/ArrayList/HashMap/HashSet/ConcurrentHashMap` because:
   * they can be accurately and cheaply splitted into subsets.
@@ -1023,24 +1133,27 @@ Practically speaking, it rarely provides benefits over cost. However we need to 
 
 ### Check Parameters for Validity
 
+__Tag__
+* Parameter Validation
+
 There are class-level documentation and method-level documentation. Class-level documentation applies to all methods under this class. In the space of validating arguments, if an argument is `null`, every method will throw `NullPointerException`, which should be documented at class level.
 
-Some typical exceptions throw during argument validation:
+Some typical __exceptions__ throw during argument validation:
 * `IllegalArgumentException`
 * `IndexOutOfBoundsException`
 * `NullPointerException`
 
-Some methods validating arguments:
+Some __methods__ validating arguments:
 * `Objects.requireNonNull()`
 * `Preconditions.checkNotNull()`
 
-Some annotations serve as a reminder:
+Some __annotations__ serve as a reminder:
 * `@Nullable`
 * `@NotNull`
 
 ### Make Defensive Copies When Needed
 
-About defensive copies:
+__Notes__
 * Return defensive copies to clients so the client will never be able to modify the internals of the returned object
 * Make defensive copies when you receive an object reference from client so any damage made to the object will not impact your program
 * No defensive copy is needed when you use immutable objects
@@ -1112,7 +1225,11 @@ __Notes__
 
 ### Use Overloading Judiciously
 
-The choice of which `overloaded` method to invoke is decided at Compile time. In other words, Runtime argument type doesn't change it. The choice of which `overriden` method to invoke is decided at Runtime.
+__Tag__
+* Overload
+* Override
+
+The choice of which `overloaded` method to invoke is decided at Compile time. In other words, Runtime argument type doesn't change it. But the choice of which `overriden` method to invoke is decided at Runtime.
 
 __Rule of Thumb:__
 1. Avoid confusing use of overloaded method. Overloading with different number of parameters is non-confusing.
@@ -1193,9 +1310,19 @@ When you return a lot of empty `Collections`, use the following shared immutable
 
 ### Return Optionals Judiciously
 
-Prefer returning `Optional` to returning `null`. Returning `null` implicitly requires checking on client side whereas returning `Optional` does that explicitly. However, using `Optional` does introduce performance overhead.
+__Tag__
+* Optional
+
+__Prefer returning `Optional` to returning `null`__. 
+
+Returning `null` implicitly requires checking on client side whereas returning `Optional` does that explicitly. 
+
+However, using `Optional` does introduce performance overhead.
 
 ### Write JavaDoc Comments for All Exposed API Elements
+
+__Tag__
+* Java Document (JavaDoc)
 
 [How To Write Doc Comments](https://www.oracle.com/technical-resources/articles/java/javadoc-tool.html) is the definitive guide on this topic.
 
@@ -1207,9 +1334,11 @@ Some most-commonly used Javadoc Tags:
 * `@throws`
 * `{@code}` displays text in code font
 * `{@implSpec}` describes the method behavior serving as a contract between this class and its subclass
-* `{@literal}` supresses the HTML markup, such as "<", ">", "&", "|", etc.
+* `{@literal}` supresses the HTML markup, such as "<", ">", "&", etc.
 
-The first sentence of each doc comment is the summary description. For methods, it's usually a verb phrase. For class, fields and interface, it's usually a noun phrase.
+The first sentence of each doc comment is the summary description. 
+* For methods, it's usually a verb phrase. 
+* For class, fields and interface, it's usually a noun phrase.
 
 # General Programming
 
@@ -1221,7 +1350,10 @@ This is one of the things that most programmers should get uncomfortable when NO
 
 ### Prefer for-each Loops to Traditional for Loops
 
-I am not talking about `Stream forEach API`.
+__Tag__
+* For Loops
+
+I am __NOT__ talking about `Stream forEach API`.
 
 __for-each loop:__ `for (String s : new String[] {"haha", "hehe", "heihei"})`.
 
@@ -1233,7 +1365,10 @@ Numerous features are added to Java libraries in every major release.
 
 Some of the major libraries that every programmer should keep updating themselves with:
 * `java.lang`
-* `java.util (including java.util.collection, java.util.stream and java.util.concurrent)`
+* `java.util`
+  * `java.util.collection`
+  * `java.util.stream`
+  * `java.util.concurrent`
 * `java.io`
 
 ### Avoid float and double If Exact Answers are Required
@@ -1242,7 +1377,11 @@ When accuracy is critical, use BigDecimal. It gives you control over rounding at
 
 ### Prefer Primitive Types to Boxed Primitives
 
-Eight Primitives
+__Tag__
+* Primitives
+* Boxed Primitives (Reference Type / Object)
+
+__Eight Primitives__
 * `boolean`: 1-bit
 * `byte`: 8-bit signed integer
 * `short`: 16-bit signed integer
@@ -1252,7 +1391,7 @@ Eight Primitives
 * `double`: double precision 64-bit floating point
 * `char`: 16-bit unicode character
 
-Each primitive has a corresponding reference type, called boxed primitives:
+__Corresponding Boxed Primitives__
 * `Boolean`
 * `Byte`
 * `Short`
@@ -1261,6 +1400,8 @@ Each primitive has a corresponding reference type, called boxed primitives:
 * `Float`
 * `Double`
 * `Character`
+
+__Notes__
 
 Using primitives gives performance benefits. Boxing and Unboxing happens automatically during some operations, such as "<", ">", but NOT "==", which compares identities.
 
@@ -1307,6 +1448,11 @@ public getFavoriteMovieFromCompoundKey(String key) {
 
 ### Beware the Performance of String Concatenation
 
+__Tag__
+* String Concatenation
+* StringBuilder
+* StringBuffer
+
 String concatenation by `+` is slow when doing it repeatedly because each created string is immutable. Use `StringBuilder` when performance matters. `StringBuffer` is a thread-safe implementation of `StringBuilder`, which introduces unnecessary overhead when used in a single-threaded process.
 
 ### Refer to Objects by Their Interfaces
@@ -1314,6 +1460,9 @@ String concatenation by `+` is slow when doing it repeatedly because each create
 If appropriate interfaces exist, parameters, return types, variables, fields should all be declared using interface types. It will make your program more flexible to developers and robust to clients.
 
 ### Prefer Interfaces to Reflection
+
+__Tag__
+* Reflection Best Practice
 
 Reflexction offers programmatic access to arbitrary classes:
 * Given any object, you can obtain `Constructor/Method/Field instances` representing the object's `constructors/methods/fields`
@@ -1377,7 +1526,7 @@ __Cons of Using Java Reflection__
 
 People used to use __Java Native Interface (JNI)__ to call native methods written in C/C++ for performance. They provide access to platform specific facilities such as registry and native libraries.
 
-Now it is unnecessary as JVM became comparable in performance. Plus native memory usage is not tracked by `Garbage Collector` and thus native methods are not safe.
+Now it is unnecessary as JVM became comparable in performance. Plus native memory usage is not tracked by `Garbage Collector` and thus native methods are __not safe__.
 
 ### Don't Optimize Prematurely
 
@@ -1390,9 +1539,12 @@ More specifically,
 
 ### Adhere to Generally Accepted Naming Conventions
 
+__Tag__
+* Naming Convention
+
 Definitive Guide: [The Java Language Specification](https://docs.oracle.com/javase/specs/).
 
-In general:
+__In general__:
 * Instantiable classes are noun phrases such as `Thread, PriorityQueue`
 * Non-instantiable utility classes are plural noun phrases, such as `Collections`
 * Interfaces are noun phrases such as `Collection` or adjective phrases such as `Comparable`
@@ -1403,7 +1555,7 @@ In general:
 * Naming conventions for fields and local variables are less obvious
 
 
-Some examples
+__Some examples__
 
 | Identifier Type | Example |
 | :----: | :----: |
@@ -1414,7 +1566,7 @@ Some examples
 | Local Variable | i, denom, houseNum, concurrentTask |
 | Type Parameter | T, E, K, V, X, R, T1, T2 |
 
-Note
+Notes
 * T for arbitrary type
 * E for element type of a collection
 * K, V for key type and value type of a map
@@ -1440,9 +1592,17 @@ try {
 }
 ```
 
-Side note to introduce __state-dependent method and state-testing method__: To generalize this example, a class with a "state-dependent" method such as `iterator.next()` should have a separate "state-testing" method such as `iterator.hasNext()`. Note that such design doesn't work out in concurrent scenarios without external synchronizations. An alternative is to have a distinguished return value such as empty `Optional` for the state-dependent method.
+Side notes on __state-dependent method and state-testing method__:
 
-### Use Checked Exceptions for Recoverable Conditions and Runtime Exceptions for Programming errors
+To generalize the above example, a class with a "state-dependent" method such as `iterator.next()` should have a separate "state-testing" method such as `iterator.hasNext()`. Further note that such design doesn't work out in concurrent scenarios without external synchronizations.  
+
+An alternative is to have a distinguished return value such as empty `Optional` for the state-dependent method.
+
+### Use Checked Exceptions for Recoverable Conditions and Runtime Exceptions for Programming Errors
+
+__Tag__
+* Throw Checked Exception
+* Throw Runtime Exception
 
 __Notes__
 * Throw checked exceptions when you demand them being caught and handled in the downstream process.
@@ -1497,6 +1657,10 @@ __When to use checked exceptions?__
 | NumberFormatException | Unable to convert a string into a number |
 
 ### Throw Exceptions Appropriate to the Abstraction
+
+__Tag__
+* Exception Propagation
+* Exception Translation By Exception Chaining
 
 __What is exception propagation?__ and how does it hurt if not done appropriately?
 ```java
@@ -1592,6 +1756,9 @@ Use the JavaDoc `@throws` tag to document each __checked__ exception that a meth
 
 ### Include Failure-capture Information in Detail Messages
 
+__Tag__
+* Wrap Exception Info In Constructor
+
 When throwing exceptions, include as much info contributing to the exceptional case as possible. For example, when you throw `IndexOutOfBoundsException`, you should include the lowerBound, upperBound and indexValue. All of them can go wrong.
 
 A better way to achieve this is to require these essential info to be included in the exception `constructor`, as well as in its `toString()` method.
@@ -1614,7 +1781,13 @@ The title says if you catch an exception, don't leave the catch block empty. Oth
 
 ### Synchronize access to shared mutable data
 
-Can you see why the following program never terminates?
+__Tag__
+* `volatile`
+* `synchronized`
+* Atomic Primitives
+
+__Can you see why the following program never terminates?__
+
 ```java
 // Broken program. Never terminates.
 public class StopThread {
@@ -1638,7 +1811,8 @@ public class StopThread {
 }
 ```
 
-The above program never terminates because, without explicit synchronization, JVM does the following optimization known as "hoisting":
+The above program never terminates because, __without explicit synchronization__, JVM does the following optimization known as "hoisting":
+
 ```java
 // before transformation
 while (!stopRequested) {
@@ -1655,7 +1829,8 @@ if (!stopRequested) {
 }
 ```
 
-Now things become different with synchronization.
+__Now things become different with synchronization.__
+
 ```java
 // Properly synchronized cooperative thread termination
 public class StopThread {
@@ -1687,13 +1862,14 @@ public class StopThread {
 }
 ```
 
+__Mutual Exclusion & Latest Read__  
 The `synchronized` keyword not only ensures "mutual exclusion" meaning that only a single thread executes the synchronized block of code at a time, it also ensures that any thread entering the synchronized block sees the effects of all previous modifications that were guarded by the same lock (communication effect).
 
 Note that synchronization is not guaranteed to work unless both READ and WRITE operations are synchronized (as demonstrated in the above example).
 
-Further note that in this use case, the `synchronized` method is atomic regardless of synchronization. In other words, the `synchronized` keyword here is used solely for its communication effect, not for mutual exclusion.
+Further note that in this use case, the `synchronized` method (READ/WRITE) is atomic even without synchronization. In other words, the `synchronized` keyword here is used solely for its communication effect, not for mutual exclusion.
 
-With that being said, the performance overhead can be reduced by using `volatile` keyword as it guarantees that any thread reading the `volatile` field will see the most recently written value as demonstrated below.
+With that being said, the performance overhead can be reduced by using `volatile` keyword as it guarantees that any thread reading the `volatile` field will see the most recently written value __as demonstrated below__, without the cost to ensure mutual exclusion.
 
 ```java
 // Cooperative thread termination with a volatile field
@@ -1718,7 +1894,8 @@ public class StopThread {
 }
 ```
 
-Carefully note that `volatile` works incredibly well in the above example because READ (`while (!stopRequested)`) and WRITE (`stopRequest = true`) operations are __atomic__. When one of them is not atomic, things will go wrong. For example:
+Carefully note that `volatile` works incredibly well in the above example because READ (`while (!stopRequested)`) and WRITE (`stopRequest = true`) operations are __atomic__. When one of them is not atomic, things will go wrong. __For example__:
+
 ```java
 // Broken! It requires synchronization.
 class SerialNumberGenerator {
@@ -1731,7 +1908,7 @@ class SerialNumberGenerator {
 }
 ```
 
-The problem is that increment operation `++` is not atomic. It reads the value, increment and write back the new value. So some other thread can interleave the operations. "Atomic Primitives" as defined in `java.util.concurrent.atomic` are designed for situations like this. Using "Atomic Primitives" provides better performance than using `synchronized` keyword as it is internally lock free.
+The __problem__ is that increment operation `++` is not atomic. It reads the value, increment and write back the new value. So some other thread can __interleave the operations__. __"Atomic Primitives"__ as defined in `java.util.concurrent.atomic` are designed for situations like this. Using "Atomic Primitives" provides better performance than using `synchronized` keyword as it is internally lock free.
 
 ```java
 class SerialNumberGenerator {
@@ -1752,13 +1929,13 @@ __Principle 1:__ Inside a synchronized block, don't invoke a method that's desig
 
 __Principle 2:__ Do as little work as possible inside synchronized block.
 
-__Principle 3:__ If you are debating between the following two designs:
-* having a class with synchronized internals, such as `StringBuffer, ConcurrentHashMap`
-* having a class that doesn't take care of synchronization but it allows client to place synchronization from external.
+__Principle 3:__ If you are debating between the following:
+* Design 1: having a class with synchronized internals, such as `StringBuffer, ConcurrentHashMap`
+* Design 2: having a class that doesn't take care of synchronization but it allows client to place synchronization from external.
 
-Take the second design unless you can achieve significantly higher concurrency with internal synchronization implementation, which is possible by using various techniques, such as "lock splitting", "lock stripping", "non-blocking concurrency control", etc but usually unnecessary.
+__Take the second design__ unless you can achieve significantly higher concurrency with internal synchronization implementation, which is possible by using various techniques, such as "lock splitting", "lock stripping", "non-blocking concurrency control", etc but usually unnecessary.
 
-Taking the first design will incur unnecessary overhead when the class is used where concurrency is not needed. However taking 2 always allows you to synchronize whenever needed.
+__Taking the first design__ will incur unnecessary overhead when the class is used where concurrency is not needed. However taking 2 always allows you to synchronize whenever needed.
 
 ### Prefer Executors, Tasks and Streams to Threads
 
@@ -1780,6 +1957,11 @@ Note that `Callable` is just a `Runnable` capable of returning a value and/or th
 
 ### Prefer Concurrency Utilities to Wait and Notify
 
+__Tag__
+* `String.intern()`
+* `CountDownLatch`
+* `wait()` and `notifyAll()` idiom
+
 `String.intern()` (introduced in [Avoid Creating Unnecessary Objects](#avoid-creating-unnecessary-objects)) can be implemented using `ConcurrentMap` as below example shows:
 ```java
 public class String {
@@ -1797,16 +1979,16 @@ public class String {
 
 `ConcurrentHashMap` is one of the high-performance concurrent implementations of the stardard `Map` interface. Same thing goes for other `Collection` interfaces, such as `List, Queue` etc. These implementations manage their own synchronizations internally. Therefore, applying additional synchronization from external only slows it down.
 
-These concurrent collections are 1/3 of the `java.util.concurrent` offerings, the other 2/3 of it are:
+__These concurrent collections are 1/3 of the `java.util.concurrent` offerings, the other 2/3 of it are:__
 * Executor Framework ([Prefer Executors, Tasks and Streams to Threads](#prefer-executors,-tasks-and-streams-to-threads))
 * synchronizers
 
-Synchronizers include:
+__Synchronizers include:__
 * `CountDownLatch` (most commonly used)
 * `CyclicBarrier`
 * `Phaser`
 
-The following example helps to understand how `CountDownLatch` works. The example is often used to reproduce concurrency bugs as it can force arbitrary number of threads to perform some piece of logic concurrently.
+__The following example__ helps to understand how `CountDownLatch` works. The example is often used to reproduce concurrency bugs as it can force arbitrary number of threads to perform some piece of logic concurrently.
 
 ```java
 public class ConcurrentExecution {
@@ -1845,6 +2027,7 @@ public class ConcurrentExecution {
 }
 ```
 
+__Wait and Notify Idiom__  
 For legacy API, such as `wait(), notify(), notifyAll()`, they are replaced by the above `java.util.concurrent` offerings. In case you need to maintain legacy code, make sure you always invoke `.wait()` from within a while loop using the standard idiom. The loop serves to test the condition before and after waiting. Testing the condition before waiting and skipping if the condition already holds are necessary to ensure __liveness__. Testing the condition after waiting and waiting again if the condition does not hold are necessary to ensure __safety__.
 
 ```java
@@ -1899,6 +2082,9 @@ For __instance field lazy initialization__ with performance improvement, use "do
 * racy single-check idiom
 
 ### Don't Depend on the Thread Scheduler
+
+__Tag__
+* Busy Wait
 
 The best way to write a robust, responsive, portable program is to ensure that the average number of `runnable` threads is not significantly greater than the number of processors.
 
