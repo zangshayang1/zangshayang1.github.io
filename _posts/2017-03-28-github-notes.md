@@ -271,6 +271,11 @@ The following does:
 > git clean -df
 ```
 
+Recursively remove .DS_Store file from already committed repository
+```shell
+> find . -name .DS_Store -print0 | xargs -0 git rm --ignore-unmatch
+```
+
 ## Git Rename
 ```shell
 # rename origin to destination
