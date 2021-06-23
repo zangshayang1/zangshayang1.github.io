@@ -112,3 +112,24 @@ __3 Stages during loading (load binary code of required classes into method area
 [Reflection Performance](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/reflection/ReflectionPerformance.java)
 
 [Override Accessibility](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/reflection/Accessibility.java)
+
+# Generics
+
+[Generic Class](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/generics/Inheritance.java)
+
+[Generic Method](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/generics/GenericMethod.java)
+
+[Wildcard](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/generics/WildCard.java)
+
+[Erasure](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/generics/Erasure.java)
+
+
+# Annotation
+
+[Annotation Basics](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/annotations/MyAnnotation.java)
+
+[Four Meta Annotations](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/annotations/FourMetaAnnotation.java)
+
+[Annotation Use With Reflect](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/annotations/UseWithReflection.java)
+
+# Concurrency
