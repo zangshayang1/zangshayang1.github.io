@@ -11,7 +11,7 @@ tag: java
 
 
 
-Updated: 2021-07-04
+Updated: 2021-07-05
 
 # Collection
 
@@ -134,7 +134,7 @@ __3 Stages during loading (load binary code of required classes into method area
 
 [Annotation Use With Reflect](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/annotations/UseWithReflection.java)
 
-# Concurrency
+# Concurrent Programming
 
 ### Inspirational Questions
 
@@ -625,13 +625,102 @@ __Java Util Concurrent APIs and their scenarios__
 3. Phaser -> Multi-stage variable number of threads in each stage (Too much details, ignored).
 4. [Semaphore](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/concurrent/coordination/SemaphoreDemo.java) -> Threadpool resource control (rate limiter).
 
+There are 3 things worthnoting in a [simplified implementation of CountDownLatch](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/concurrent/coordination/MyCountDownLatch.java):
+1. The use of infinite loop with conditional termination help to implement conditional waiting paradigm in concurrent programming that can also prevent psudo wakeup
+2. The use of `SynchronizedList<Thread>` serving as a waiting pool
+3. The use of CompareAndSet(CAS)
 
+# Thread Safety
 
+### Java Memory Model and Synchronization Protocol
+
+__Java Memory Model__
+1. global variable in main memory space
+2. thread can only access its own working memory space
+3. thread READ/WRITE global variable must first sync variable from main memory to working memory and then sync back. require that it goes through a synchronization protocol that sits between its own working memory space and main memory space.
+
+The above model, in which working threads cannot directly access main memory, brings all kinds of thread safety concerns. Java Memory Model is part of __Java Language Norm__. They are logical concepts. Different JVM implementations must follow the same Java Language Norm. Eight atomic operations are defined in a synchronization protocol that sits between threads' working memory and main memory. The below eight atomic operations are again logical concepts. Different JVMs provide different implementations. 
+
+__Synchronization Protocol - Eight Atomic Operations__
+1. lock - restrict main memory variable access to a single thread
+2. unlock
+3. read - read variable value from main memory into registers
+4. load - load variable value from registers to working memory
+  * `read and load` sync variable from main memory to working memory.
+5. use
+6. assign
+7. store - store variable value from working memory to registers
+8. write - write variable value from registers to main memory
+  * `store and write` sync variable from working memory to main memory.
+
+__Synchronization Protocol - Eight rules__
+1. (Read, load) or (store, write) operations are always paired.
+2. When a variable value is updated in a thread, it must be sync'ed back to main memory.
+3. When a variable value is not updated in a thread, it must not be sync'ed back to main memory.
+4. A new shared variable can only come from main memory
+5. No more than 1 thread can lock the same variable. One thread can `lock` one variable many times and unlocking the variable requires as many times `unlock` operation.
+6. Before a variable is locked, its local cache in working thread must be cleared. 
+7. A thread cannot `unlock` a variable that is NOT previously locked. A thread cannot `unlock` a variable that is previously locked by other threads. 
+8. Before a variable is unlocked, its local cache in working thread must be sync'ed back to main memory.
+
+### Thread Safety
+
+__synchronized semantics__
+1. Right before entering `synchronized` block, it will clear thread-local cache of the locked variable and perform (read, load) operations to sync from main memory.
+2. Right before exiting `synchronized` block, it will perform (store, write) operations on the locked variable to sync back to main memory.
+
+__volatile semantics__
+1. Right before READ `volatile` variables, (read, load) operations must be performed consecutively.
+2. Right after WRITE `volatile` variables, (store, write) operations must be performed consecutively.
+
+__Note__
+1. Modern CPUs employ performance optimization that can result in out-of-order execution of operations. The order of execution can be guaranteed by [memory barrier](https://en.wikipedia.org/wiki/Memory_barrier). 
+2. Appropriate use of `synchronized` keyword can guarantee thread safety but `volatile` can ONLY guarantee clean READ.
+3. Use of `volatile` keyword can prevent reordering of operations in local code block. 
+
+__The following example demonstrated why reordering of operations can be unsafe under multi-threading context:__
+```java
+// Thread A
+content = init();
+isInit = true;
+
+// The above can be reordered as below when boolean variable "isInit" is not involved in init()
+isInit = true;
+content = init();
+
+// Thread B
+if (isInit) {
+  content.method();
+}
+
+// when threads A and B are running concurrently
+// it's likely that B throw NullPointerException due to the above reordering.
+```
+
+__The following example demonstrated when volatile is thread safe:__
+
+```java
+// volatile variable is thread safe when:
+// 1. there is only one modifer
+// 2. the variable points to a primitive data structure
+volatile boolean flag; 
+volatile int i;
+
+// volatile variable is NOT thread safe when there are more than 1 modifiers
+
+// volatile variable is NOT thread safe when
+// the variable points to a container data structure where data references are stored
+// for example, volatile list != all the integers inside are volatile
+volatile List<Integer> alist = new ArrayList<>();
+```
+
+__Thread Safety Demo__
+1. [How synchronized/volatile keyword impact visibility](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/concurrent/keyword/VisibilityDemo.java)
+2. [Classic singleton implementation using volatile to prevent reordering of operations](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/concurrent/keyword/Singleton.java)
+3. [When volatile keyword cannot guarantee thread safety](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/concurrent/keyword/VolatileThreadUnsafeDemo.java)
 
 
 # QUESTION
-
-为什么 volatile 可以防止指令优化重排？
 
 Java VisualVM is a great tool to monitor java app.
 
