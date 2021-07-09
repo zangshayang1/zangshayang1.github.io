@@ -11,7 +11,7 @@ tag: java
 
 
 
-Updated: 2021-07-05
+Updated: 2021-07-08
 
 # Collection
 
@@ -281,6 +281,7 @@ public class Executors {
   * put(e)
   * take()
 
+![]({{ '/styles/images/zhangxin-java-core/thread-pool-executor-algorithm.png' | prepend: site.baseurl }})
 
 __Read Source Code And Comment__
 ```java
@@ -358,6 +359,8 @@ public class Thread implements Runnable {
     }
 }
 ```
+
+![]({{ '/styles/images/zhangxin-java-core/thread-state-lifecycle.jpeg' | prepend: site.baseurl }})
 
 __Thread Operations & State Transition__
 1. [start()](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/concurrent/thread/state/ThreadStateDemo1_Sleep.java) makes thread go from NEW to RUNNABLE;
@@ -697,7 +700,7 @@ if (isInit) {
 // it's likely that B throw NullPointerException due to the above reordering.
 ```
 
-__The following example demonstrated when volatile is thread safe:__
+__volatile keyword ensures atomic READ/WRITE for a single address rather than an object__
 
 ```java
 // volatile variable is thread safe when:
@@ -719,6 +722,113 @@ __Thread Safety Demo__
 2. [Classic singleton implementation using volatile to prevent reordering of operations](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/concurrent/keyword/Singleton.java)
 3. [When volatile keyword cannot guarantee thread safety](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/concurrent/keyword/VolatileThreadUnsafeDemo.java)
 
+__READ/WRITE Atomicity__
+
+Java Memory Mode defined 8 atomic operations. Among them, read/load/assign/use/store/write operations are used with `synchronized` keyword to ensure the atomicity of primitive data type READ/WRITE operations. 
+
+__Order Of Execution__
+Due to CPU performance optimization, execution is out-of-order under multi-threading context. But within a single thread, execution is as-if-serial.
+
+JMM defined eight __happens-before__ principles: 
+1. within a thread, if operation A's result is used in operation B, then A must happen before B.
+2. on a same object, unlocking must happen before locking.
+3. on volatile field, WRITE operation must happen before any subsequent READ operation.
+4. thread start must happen before any operation defined in this thread.
+5. all operation defined in a thread must happen before thread termination.
+6. thread interruption must happen before this thread detects interruption.
+7. an object instantiation must happen before its cleanup
+8. if A happens before B and B happens before C, then A must happen before C.
+
+__Why using lock when there is synchronized keyword?__
+
+`Lock` provides lower-level granularity of control than `synchronized` keyword in that:
+1. lock can be placed in try-catch block
+2. lock can specify waiting time
+3. lock can be interrupted
+4. different `conditions` can be applied to lock/unlock different threads (lower-level granlarity of control) whereas synchronized threads
+  * must `wait` for `notify` altogether
+  * must release locks at the reverse order of them being acquired
+
+Also, `lock` provide fair/unfair lock implementations while `synchronized` keyword implements unfair lock. A fair lock favors granting access to the longest-waiting thread.
+
+__Lock interface and use pattern__
+
+```java
+public interface Lock {
+  void lock();
+  void lockInterruptibly() throws InterruptedException;
+  boolean tryLock();
+  boolean tryLock(long time, TimeUnit unit) throws InterruptedException;
+  void unlock();
+}
+
+// ReentrantLock class implements the Lock interface. 
+// It offers the same concurrency and memory semantics, as the implicit monitor lock 
+// accessed using synchronized methods and statements, with extended capabilities.
+public class ReentrantLock implements Lock {}
+
+// Typical use pattern
+class SharedResource {
+  private final Lock lock = new ReentrantLock();
+
+  public void fun() {
+    lock.lock();  // block until condition holds
+    try { // lock is always followed by try to avoid deadlock in case of an exception thrown.
+      // ... method body
+    } finally {
+      lock.unlock()
+    }
+  }
+}
+```
+
+__Lock Condition Pattern__
+```java
+public interface Lock {
+  // ...
+
+  // Returns a new Condition instance that is bound to this lock
+  Condition newCondition();
+}
+
+public interface Condition {
+  void await() throws InterruptedException;
+  void signal();
+}
+```
+
+__ReadWriteLock vs Lock__
+
+`Lock` interface defines mutual exclusive lock but `ReadWriteLock` interface defines a lock that can be shared by many READ threads and exclusively acquired by a single WRITE thread. It is designed to improve performance under certain circumstances where READ concurrency > WRITE concurrency. But under extreme cases where READ concurrency >> WRITE concurrency, WRITE thread might not be able to acquire the lock at all. 
+
+```java
+public interface ReadWriteLock {
+    // Returns the lock used for reading.
+    Lock readLock();
+
+    // Returns the lock used for writing.
+    Lock writeLock();
+
+// implementation
+public class ReentrantReadWriteLock implements ReadWriteLock {}
+```
+
+__StampedLock__
+
+`StampedLock` provides pessimistic read lock (assuming content has been changed when reading) and optimistic read (assuming content has NOT been changed when reading), and of course exclusive write lock. It's added in Java 8 to improve the performance of `ReadWriteLock` under the above extreme cases. 
+
+__Lock Demo__
+[Demo the use of Lock and Condition](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/concurrent/lock/ProducerConsumerQueue.java)
+
+[Demo the use of ReadWriteLock](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/concurrent/lock/ReadWriterLockDemo.java)
+
+[Demo the use of ReentrantLock](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/concurrent/lock/ReentrantLockDemo.java)
+
+[Demo the use of StampedLock](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/concurrent/lock/StampedLockDemo.java)
+
+__Lock Performance Comparison__
+
+![]({{ '/styles/images/zhangxin-java-core/lock-performance-comparison.png' | prepend: site.baseurl }})
 
 # QUESTION
 
