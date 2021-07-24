@@ -11,7 +11,7 @@ tag: java
 
 
 
-Updated: 2021-07-08
+Updated: 2021-07-18
 
 # Collection
 
@@ -666,7 +666,7 @@ __Synchronization Protocol - Eight rules__
 7. A thread cannot `unlock` a variable that is NOT previously locked. A thread cannot `unlock` a variable that is previously locked by other threads. 
 8. Before a variable is unlocked, its local cache in working thread must be sync'ed back to main memory.
 
-### Thread Safety
+### Synchronization Keywords and Locks
 
 __synchronized semantics__
 1. Right before entering `synchronized` block, it will clear thread-local cache of the locked variable and perform (read, load) operations to sync from main memory.
@@ -830,8 +830,604 @@ __Lock Performance Comparison__
 
 ![]({{ '/styles/images/zhangxin-java-core/lock-performance-comparison.png' | prepend: site.baseurl }})
 
+### Atomic Types
+
+* AtomicInteger
+* AtomicLong
+* AtomicBoolean
+* AtomicReference [demo](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/concurrent/atomic/AtomicReferenceDemo.java)
+* AtomicIntegerArray
+* AtomicLongArray
+* AtomicReferenceArray
+* AtomicIntegerFieldUpdater [demo](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/concurrent/atomic/AtomicFieldUpdaterDemo.java)
+* AtomicLongFieldUpdater
+* AtomicReferenceFieldUpdater
+
+__When using atomic field updater:__
+* the field must be accessible
+* the field must be volatile
+* the field cannot be static
+* the field cannot be final
+* the field cannot come from parent
+
+__How to handle ABA Problem?__
+[What is ABA Problem](https://en.wikipedia.org/wiki/ABA_problem)
+* AtomicStampedReference [demo](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/concurrent/atomic/AtomicStampedReferenceDemo.java)
+* AtomicMarkableReference
+
+How to implement ReentrantLock using LockSupport and Atomic type? Thread Safety-3 59:00
+
+### Distributed lock
+scenario analysis
+high-performance machine
+low latency (return true or false) back to requester and blocking happens in requester host
+
+Implement?
+1. exclusive
+2. blocking
+3. reentrant
+
+how to provide exclusivity? 
+2. sql-based database: primary key (whoever created the next record get the lock?)
+  * single point failure
+  * unable to handle high concurrency
+  * no ttl for record -> whoever wrote the lock record died before remove the pk record -> deadlock
+3. cache based redis -> setnx() returns true if set successful otherwise false.
+  * whoever calls setnx died before remove the key -> deadlick -> how to set ttl -> too long or too short is equally bad
+  * good performance able to support highest concurrency
+4. file system (znode) based zookeeper:
+  * easier to implement -> no need to consider ttl -> watch mechanism
+  * reliable
+  * performance not as good as redis -> support 10-20k concurrency
+
+### Zookeeper
+
+__Four Type of Znode__
+1. persistent
+2. persistent_sequential
+3. ephemeral
+4. ephemeral_sequential
+
+```shell
+> ./zookeeper/bin/zkCli.cmd 
+> create /mynode <data> # create a PERSISTENT znode with data
+> set /mynode <update_data> # update data in existing node
+> create -s /mynode/ <data> # create a PERSISTENT_SEQUENTIAL znode: /mynode/0000000000
+> create -s /mynode/ <data> # create a PERSISTENT_SEQUENTIAL znode: /mynode/0000000001
+> delete /mynode/0000000001 # delete a znode 
+> create -e /eph <data> # create a EPHEMERAL znode, which will be gone when this session terminates.
+> create -s -e /mynode <data> # create a EPHEMERAL_SEQUENTIAL znode: /mynode/0000000002
+> quit
+```
+
+__Use ZK to implement a distributed lock__
+
+Whichever thread successfully creates an ephermeral znode gets the lock. Before it releases the lock, it will delete the znode. Note that creating persistent znode might turn out to be a deadlock if a thread died before it removes the znode. Whereas an ephermeral znode will automatically be deleted when the session disconnects. 
+
+[Distributed Lock Implementation in High Concurrency Context](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/concurrent/distributed/HighConcurrencyScenario.java)
+
+![]({{ '/styles/images/zhangxin-java-core/use-zk-as-distributed-lock.png' | prepend: site.baseurl }})
+
+__Thundering Herd Problem__
+[What is thundering herd problem?](https://en.wikipedia.org/wiki/Thundering_herd_problem)
+ 
+### AQS - AbstractQueuedSynchronizer
+
+Before digging into AQS, let's do some warm up: 
+1. [Implement My Version of Reentrant Lock](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/concurrent/lock/MyReentrantLockImpl.java)
+2. Compare ReentrantLock and Semaphore
+  * both support fair/unfair mode.
+  * both are blocking.
+  * both behave the same: whoever acquires the locking resource(s) can proceed while others are blocked.
+  * both are built on top of `AbstractQueuedSynchronizer` (same for CountDownLatch)
+  * There is only 1 locking resource (exclusive) in ReentrantLock but there could be arbitrary number of locking resources (shared across threads) in Semaphore. 
+
+__What is AQS?__  
+Quote from Java source - It provides a framework for implementing blocking locks and related synchronizers (semaphores, events, etc) that rely on first-in-first-out (FIFO) wait queues. This class is designed to be a useful basis for most kinds of synchronizers that rely on a single atomic `int` value to represent state.
+
+__How to use AQS__  
+Quote from Java source - Subclasses must define the protected methods that change this state and define what that state means in terms of this object being acquired or released. Given these, the other methods in this class carry out all queuing and blocking mechanics. Subclasses can maintain other state fields, but only the atomic `int` value manipulated using methods `getState`, `setState` and `compareAndSetState` is tracked with respect to synchronization. Subclasses should be defined as non-public internal helper classes that are used to implement the synchronization properties of their enclosing class. 
+
+![]({{ '/styles/images/zhangxin-java-core/aqs-core.png' | prepend: site.baseurl }})
+
+__Support Two Modes__  
+Quote from Java source - This class supports either or both a default __exclusive__ mode and a __shared__ mode. When acquired in exclusive mode, attempted acquires by other threads cannot succeed. Shared mode acquires by multiple threads may (but need not) succeed. Two modes share the same queue by use different nodes.
+
+```java
+public abstract class AbstractQueuedSynchronizer extends AbstractOwnableSynchronizer {
+
+  // implementation omitted ...
+
+  static final class Node {
+    /** Marker to indicate a node is waiting in shared mode */
+    static final Node SHARED = new Node();
+    /** Marker to indicate a node is waiting in exclusive mode */
+    static final Node EXCLUSIVE = null;
+
+    /** waitStatus value to indicate thread has cancelled */
+    static final int CANCELLED =  1;
+    /** waitStatus value to indicate successor's thread needs unparking */
+    static final int SIGNAL    = -1;
+    /** waitStatus value to indicate thread is waiting on condition */
+    static final int CONDITION = -2;
+    /**
+     * waitStatus value to indicate the next acquireShared should
+     * unconditionally propagate
+     */
+    static final int PROPAGATE = -3;
+
+    /**
+     * Status field, taking on only the values:
+     *   SIGNAL:     The successor of this node is (or will soon be)
+     *               blocked (via park), so the current node must
+     *               unpark its successor when it releases or
+     *               cancels. To avoid races, acquire methods must
+     *               first indicate they need a signal,
+     *               then retry the atomic acquire, and then,
+     *               on failure, block.
+     *   CANCELLED:  This node is cancelled due to timeout or interrupt.
+     *               Nodes never leave this state. In particular,
+     *               a thread with cancelled node never again blocks.
+     *   CONDITION:  This node is currently on a condition queue.
+     *               It will not be used as a sync queue node
+     *               until transferred, at which time the status
+     *               will be set to 0. (Use of this value here has
+     *               nothing to do with the other uses of the
+     *               field, but simplifies mechanics.)
+     *   PROPAGATE:  A releaseShared should be propagated to other
+     *               nodes. This is set (for head node only) in
+     *               doReleaseShared to ensure propagation
+     *               continues, even if other operations have
+     *               since intervened.
+     *   0:          None of the above
+     *
+     * The field is initialized to 0 for normal sync nodes, and
+     * CONDITION for condition nodes.  It is modified using CAS
+     * (or when possible, unconditional volatile writes).
+     */
+}
+```
+
+__Provide Condition Implementation__  
+Quote from Java source - This class defines a nested `ConditionObject` class that can be used as a `Condition` implementation by subclasses.
+
+__Important to Note when Overriding the Protected Abstract Methods__  
+Protected Abstract Methods:
+* tryAcquire
+* tryRelease
+* tryAcquireShared
+* tryReleaseShared
+* isHeldExclusively
+
+Important Notes:
+1. use `getState`, `setState` and `compareAndSetState` to manipulate the atomic `int` state.
+2. the implementation internal should be thread-safe and non-blocking
+3. all the above methods return `boolean` except that `tryAcquireShared` returns `int` value: negative means failure; 0 means the current thread gets the only remaining resource; positive means the current thread gets one of the remaining resources and current thread needs to wake up the next one waiting in the queue.
+
+__The Queue in AQS Doesn't Guarantee Fairness__  
+Quote from Java source - While this is not guaranteed to be fair or starvation-free, earlier, queued threads are allowed to recontend before later queued threads, and each recontention has an unbiased chance to succeed against incoming threads. Throughput and scalability are generally highest for this default barging strategy. Fairness can be implemented by subclasses. 
+
+__Core Logic of Acquiring a Lock__
+
+![]({{ '/styles/images/zhangxin-java-core/acquire-lock-core-logic.png' | prepend: site.baseurl }})
+
+### Synchronized
+
+```java
+public class SynchroinzedDemo {
+    
+    static int c;
+    // static synchronized method locking at class level
+    public static synchronized void add1(int a) { c += a; }
+
+    // non-static synchronized method locking at the class instance
+    public synchronized void add2(int a) { c += a; }
+
+    // synchronized block locking at whatever object provided
+    public void add3(int a){
+      synchronized (this) { c += a; }
+    }
+}
+```
+
+---
+
+__How Does Synchronized Keyword Work?__  
+
+The above demo code (add3) compiles to the following:
+```
+public static synchronized void add1(int);
+    descriptor: (I)V
+    flags: ACC_PUBLIC, ACC_STATIC, ACC_SYNCHRONIZED
+    Code:
+      stack=2, locals=1, args_size=1
+         0: getstatic     #2                  // Field c:I
+         3: iload_0
+         4: iadd
+         5: putstatic     #2                  // Field c:I
+         8: return
+
+  public synchronized void add2(int);
+    descriptor: (I)V
+    flags: ACC_PUBLIC, ACC_SYNCHRONIZED
+    Code:
+      stack=2, locals=2, args_size=2
+         0: getstatic     #2                  // Field c:I
+         3: iload_1
+         4: iadd
+         5: putstatic     #2                  // Field c:I
+         8: return
+
+public void add3(int);
+    descriptor: (I)V
+    flags: ACC_PUBLIC
+    Code:
+      stack=2, locals=4, args_size=2
+         0: aload_0
+         1: dup
+         2: astore_2
+         3: monitorenter
+         4: getstatic     #2                  // Field c:I
+         7: iload_1
+         8: iadd
+         9: putstatic     #2                  // Field c:I
+        12: aload_2
+        13: monitorexit
+        14: goto          22
+        17: astore_3
+        18: aload_2
+        19: monitorexit
+        20: aload_3
+        21: athrow
+        22: return
+```
+
+Java `monitor` provides exclusivity for `synchronized` keyword.
+
+---
+
+__What is Monitor?__
+Java `monitor` is a syntactic sugar provided at the language level. It wraps around mutex and semaphore (kernel resources that provide synchronization, aka: synchronization primitives). Its implementation is provided by JVM, written in C/C++.
+
+```c++
+// jdk8u_hotspot/blob/master/src/share/vm/runtime/objectMonitor.hpp
+
+class ObjectMonitor {
+  // implementation omitted ...
+
+  // initialize the monitor, except the semaphore, all other fields
+  // are simple integers or pointers
+  ObjectMonitor() {
+    _header       = NULL;
+    _count        = 0;
+    _waiters      = 0,
+    _recursions   = 0;      // reentrance counter
+    _object       = NULL;
+    _owner        = NULL;
+    _WaitSet      = NULL;   // head of the doubly linked list 
+                            // leading waiting threads
+    _WaitSetLock  = 0 ;
+    _Responsible  = NULL ;
+    _succ         = NULL ;
+    _cxq          = NULL ;
+    FreeNext      = NULL ;
+    _EntryList    = NULL ;
+    _SpinFreq     = 0 ;
+    _SpinClock    = 0 ;
+    OwnerIsThread = 0 ;
+    _previous_owner_tid = 0;
+  }
+
+// more methods omitted ...
+
+public:
+  bool      try_enter (TRAPS) ;
+  void      enter(TRAPS);
+  void      exit(bool not_suspended, TRAPS);
+  void      wait(jlong millis, bool interruptable, TRAPS);
+  void      notify(TRAPS);
+  void      notifyAll(TRAPS);
+
+ private:
+  void      AddWaiter (ObjectWaiter * waiter) ;
+  int       TryLock (Thread * Self) ;
+}
+```
+
+---
+
+__Optimization__
+
+Starting from Java 1.4, `-XX:-UseSpinning` was introduced to allow naive spinning through `while (i++ < 10)` before `tryLock()` again instead of directly entering monitor and waiting for wake-up signal. So if blocking duration is very short, self-spinning can give better performance than entering monitor. Otherwise, it's a waste of resources. `-XX:-UseSpinning` became default since Java 1.6 as multi-core machines became mainstream. 
+
+---
+
+__Lock Removal__
+
+```java
+public class SynchronizedRemoveDemo {
+  public static String createStringBuffer(String str1, String str2) {
+    // Thread safety is built into StringBuffer
+    StringBuffer stringBuffer = new StringBuffer();
+    // .apend() is a synchronized method but stringBuffer is a local variable
+    // so the execution is thread-safe even when .append() is not synchronized
+    // JIT compiler can figure this out through escape analysis
+    // and then remove the ACC_SYNCHRONIZED flag on .append()
+    stringBuffer.append(str1);
+    stringBuffer.append(str2);
+    return stringBuffer.toString();
+  }
+}
+```
+
+---
+
+__Lock Coarsening__
+
+Usually, we want to minimize the synchronized block of code (exactly where concurrent execution will cause unsafety) in order to ensure the effectiveness of using concurrent processing. However, when a series of operations acquire/release the same lock frequently (using `synchronized` within a for loop), Lock Coarsening will apply as an optimization.
+
+```java
+public class SynchronizedCoarseningDemo {
+    Object lock = new Object();
+
+    public void beforeCoarsening1() {
+      synchronized (lock) {
+        //do something
+      }
+      synchronized (lock) {
+        //do something else
+      }
+    }
+
+    public void beforeCoarsening2(int size) {
+      for (int i = 0; i < size; i++) {
+        synchronized(lock){
+          //do something
+        }
+      }
+    }
+
+    public void afterCoarsening1() {
+      synchronized (lock) {
+        //do something
+
+        //do something else
+      }
+    }
+
+    public void afterCoarsening2(int size) {
+      synchronized (lock) {
+        for (int i = 0; i < size; i++) {
+          //do something
+        }
+      }
+    }
+}
+```
+
+---
+
+__Light-Weight Lock__
+
+When there is no or less contention, synchronization will use CAS to provide exclusivity instead of monitor. How? A "lockable" object takes up a consecutive memory space, which consists of:
+* object body
+* object head
+  * class metadata address
+  * array length if it is an object array
+  * mark word
+    * first tag indicate whether it is locked
+    * second tag indicate whether it is locked by light weight CAS operation
+    * third tag indicate whether it is locked by heavy weight monitor
+
+![]({{ '/styles/images/zhangxin-java-core/object-mark-word.png' | prepend: site.baseurl }})
+
+---
+
+__Biased Lock__
+`-XX:-UseBiasedLocking` is only used in very-few-contention situation.
+
+---
+
+__Lock Upgrade__
+
+Biased Lock -> Light weight Lock -> Monitor
+
+Reference: https://www.programmersought.com/article/407747922/
+
+![]({{ '/styles/images/zhangxin-java-core/lock-upgrade.jpeg' | prepend: site.baseurl }})
+
+---
+
+### Thread Local
+
+__What is ThreadLocal__
+This class provides thread-local variables. These variables differ from their normal counterparts in that each thread that accesses one (via its
+{@code get} or {@code set} method) has its own, independently initialized
+copy of the variable.  {@code ThreadLocal} instances are typically private
+static fields in classes that wish to associate state with a thread (e.g.,
+a user ID or Transaction ID).  
+
+Use `ThreadLocal` to implement the concept of ["session" or "context" in a web app](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/concurrent/threadlocal/BusinessScenarioSimulator.java), where it becomes a shared state specific to a thread handling a request.
+
+
+```java
+public class Thread implements Runnable {
+  // ThreadLocal values pertaining to this thread. 
+  // This map is maintained by the ThreadLocal class.
+  ThreadLocal.ThreadLocalMap threadLocals = null;
+}
+
+// How ThreadLocal is implemented
+public class ThreadLocal<T> {
+
+  static class ThreadLocalMap {
+    /**
+     * The entries in this hash map extend WeakReference, using
+     * its main ref field as the key (which is always a
+     * ThreadLocal object).  Note that null keys (i.e. entry.get()
+     * == null) mean that the key is no longer referenced, so the
+     * entry can be expunged from table.  Such entries are referred to
+     * as "stale entries" in the code that follows.
+     */
+    static class Entry extends WeakReference<ThreadLocal<?>> {
+      // The value associated with this ThreadLocal.
+      Object value;
+
+      // Each thread instance is associated with a ThreadLocalMap
+      // that uses ThreadLocal as key to store specific value object of whatever type
+      // One ThreadLocalMap can store as many thread local values as you want
+      Entry(ThreadLocal<?> k, Object v) {
+        super(k);
+        value = v;
+      }
+    }
+  }
+
+  ThreadLocalMap getMap(Thread t) {
+    return t.threadLocals;
+  }
+
+  public void set(T value) {
+    Thread t = Thread.currentThread();
+    ThreadLocalMap map = getMap(t);
+    if (map != null)
+      map.set(this, value);
+    else
+      createMap(t, value);
+  }
+  
+  public T get() {
+    Thread t = Thread.currentThread();
+    ThreadLocalMap map = getMap(t);
+    if (map != null) {
+      ThreadLocalMap.Entry e = map.getEntry(this);
+      if (e != null) {
+        @SuppressWarnings("unchecked")
+        T result = (T)e.value;
+        return result;
+      }
+    }
+    return setInitialValue();
+  }
+}
+```
+
+__4 Types of References In Java__
+| --- | --- | --- |
+| Type of Reference | GC before Reference Nullified | Usage |
+| strong | never | object origin |
+| soft | when memory is not sufficient | object cache | 
+| weak | regular gc | object cache | 
+| phantom | regular gc | track object gc process |
+| --- | --- | --- |
+
+__Memory Leak Risk__
+
+Note that `ThreadLocalMap` uses `ThreadLocal` as its key. There is a potential risk of memory leak when the reference of `ThreadLocal` was out of scope (nullified) and `ThreadLocal` object was GC'ed. In that case, the entry in the map became stale but the reference of the entry value persisted and the value object was never GC'ed. It could lead to a serious issue when used with thread pool under high-concurrency context.
+
+Therefore do follow the below best practice when using `ThreadLocal`:
+```java
+public App {
+  private static final ThreadLocal<T> threadLocal = new ThreadLocal<>();
+
+  public static void main(String[] argv) {
+    try {
+      threadLocal.set(object);
+      // handle business logic
+    } finally {
+      threadLocal.remove();
+    }
+  }
+}
+```
+
+---
+
+### Concurrent Collections
+
+__HashTable vs ConcurrentHashMap__
+
+`HashMap` is thread-unsafe. `HashTable` is thread-safe. Why create `ConcurrentHashMap`? Because ConcurrentHashMap has performance advantage over HashTable.  
+HashTable became thread-safe by naively adding `sychronized` keyword on every method.  
+ConcurrentHashMap became thread-safe by locking on every hash bucket in an "Array-LinkedList" implementation.  
+
+---
+
+__Blocking Queue Series__
+
+```java
+// BlockingQueue Interface
+// 1. throw exception if queue is full/empty
+//   * add(e)   
+//   * remove()
+// 2. return boolean/null if queue is full/empty
+//   * offer(e)
+//   * poll() 
+// 3. blocking/waiting if queue is full/empty
+//   * put(e)
+//   * take()
+
+public class ArrayBlockingQueue<E> 
+  extends AbstractQueue<E> implements BlockingQueue<E> {}
+
+public class SynchronousQueue<E> 
+  extends AbstractQueue<E> implements BlockingQueue<E> {}
+
+public class LinkedBlockingQueue<E> 
+  extends AbstractQueue<E> implements BlockingQueue<E> {}
+```
+
+---
+
+__Concurrent Collections__
+```java
+public class ConcurrentLinkedQueue<E> 
+  extends AbstractQueue<E> implements Queue<E> {}
+
+public class ConcurrentHashMap<K,V> 
+  extends AbstractMap<K,V> implements ConcurrentMap<K,V> {}
+
+public class ConcurrentSkipListSet<E>
+  extends AbstractSet<E> implements NavigableSet<E> {}
+```
+
+---
+
+__Synchronized Collections__
+
+```java
+public class Collections {
+
+  // the following implementation is naively based on synchronized keyword
+  // so the performance is not as good as natively concurrent counterparts
+
+  static class SynchronizedMap<K, V> implements Map<K, V> {}
+
+  static class SynchronizedList<E> 
+    extends SynchronizedCollection<E> implements List<E> {}
+
+  static class SynchronizedSet<E>
+    extends SynchronizedCollection<E> implements Set<E> {}
+
+  public static <K,V> Map<K,V> synchronizedMap(Map<K,V> m) {}
+
+  public static <T> List<T> synchronizedList(List<T> list) {}
+
+  public static <T> Set<T> synchronizedSet(Set<T> s) {}
+}
+```
+
+
+
+
+
+# Design Patterns
+
 # QUESTION
 
 Java VisualVM is a great tool to monitor java app.
 
 Mutex vs Monitor vs Semaphore
+
+CAS 是如何做到原子性的？UNSAFE. Why using UNSAFE can be atomic?  
+
