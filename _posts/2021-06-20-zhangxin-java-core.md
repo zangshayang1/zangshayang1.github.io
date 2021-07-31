@@ -131,5 +131,3 @@ __3 Stages during loading (load binary code of required classes into method area
 [Four Meta Annotations](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/annotations/FourMetaAnnotation.java)
 
 [Annotation Use With Reflect](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/annotations/UseWithReflection.java)
-
-# Design Pattern
