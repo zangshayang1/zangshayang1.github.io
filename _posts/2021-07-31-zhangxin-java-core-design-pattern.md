@@ -16,13 +16,13 @@ Updated: 2021-07-31
 
 # Principles
 
-__OOP Principles__
+### OOP Principles
 1. Encapsulation
 2. Abstraction
 3. Inheritance
 4. Polymorphism
 
-__"SOLID" Design Principles__
+### "SOLID" Design Principles
 1. Single Responsibility Principle: A class should have only 1 responsibility.
 2. Open-Close Principle: Open to extension but closed to modification.
 3. Liskov Subsitution Principle: Objects in a program should be replaceable with instances of their subclasses without altering the correctness of that program.
@@ -36,7 +36,7 @@ Design patterns can be categorized into three types:
 2. Structural pattern: Bridge, Decorator, Proxy, etc.
 3. Behavior pattern: Chain of Responsibility, Pub-Sub, Strategy, Template, etc.
 
-__Strategy Pattern__ aka. Policy pattern
+### Strategy Pattern aka. Policy pattern
 
 Scenario: E-commerce platform had 100 different promotions. How to calculate the actual price after applying one of the promotions? 
 
@@ -44,7 +44,7 @@ Scenario: E-commerce platform had 100 different promotions. How to calculate the
 
 _Reference: https://refactoring.guru/design-patterns/strategy_
 
-__Decorator Pattern__
+### Decorator Pattern
 
 Scenario: In the Strategy Pattern scenario, what if multiple promotions can be applied to an order at the same time?
 
@@ -52,7 +52,7 @@ Scenario: In the Strategy Pattern scenario, what if multiple promotions can be a
 
 _Reference: https://refactoring.guru/design-patterns/decorator_
 
-__Responsibility Chain Pattern__
+### Responsibility Chain Pattern
 
 Scenario: When web app handles web requests, a request will go through interception, decryption, authentication, validation etc... before actually being handled. How to decouple and enable flexible combination?
 
@@ -60,7 +60,7 @@ Scenario: When web app handles web requests, a request will go through intercept
 
 _Reference: https://refactoring.guru/design-patterns/chain-of-responsibility_
 
-__Proxy Pattern__
+### Proxy Pattern
 
 A proxy controls access to the original object, allowing you to perform something either before or after the request gets through to the original object.
 
@@ -72,7 +72,7 @@ Dynamic Proxy Note:
 1. [Reflection based Dynamic Proxy Demo](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/design/dynamicproxy/reflect/DynamicProxyDemo.java)
 2. [CGlib based Dynamic Proxy Demo](https://github.com/zangshayang1/zhangxin/blob/master/JavaCore/src/main/com/zhangxin/javacore/design/dynamicproxy/cglib/CglibDemo.java)
 
-__Factory Method Pattern__
+### Factory Method Pattern
 
 Scenario: Logistic platform had 10 different trunks and 5 different ships to deliver goods. The type of transportation keeps growing. How to make all of these concrete implementations of transportation agnostic to client? 
 
@@ -81,19 +81,19 @@ Scenario: Logistic platform had 10 different trunks and 5 different ships to del
 
 _Reference: https://refactoring.guru/design-patterns/factory-method_
 
-__Abstract Factory Pattern__
+### Abstract Factory Pattern
 
 ![]({{ '/styles/images/zhangxin-java-core/abstract-factory-pattern.png' | prepend: site.baseurl }})
 
 _Reference: https://refactoring.guru/design-patterns/abstract-factory_
 
-__Pub-Sub Pattern__
+### Pub-Sub Pattern
 
 ![]({{ '/styles/images/zhangxin-java-core/pub-sub-pattern.png' | prepend: site.baseurl }})
 
 _Reference: https://refactoring.guru/design-patterns/observer_
 
-__State Pattern__
+### State Pattern
 
 Scenario: A vending machine receives user request, checks stock, asks for payment, distribute item.
 
@@ -101,7 +101,7 @@ Scenario: A vending machine receives user request, checks stock, asks for paymen
 
 _Reference: https://refactoring.guru/design-patterns/state_
 
-__Bridge Pattern__
+### Bridge Pattern
 
 _This problem occurs because we’re trying to extend the shape classes in two independent dimensions: by form and by color. That’s a very common issue with class inheritance._
 
