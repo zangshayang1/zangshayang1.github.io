@@ -138,6 +138,9 @@ jar -tf xxxx.jar | grep [udf_mainClass]
 # sample use:
 # 0,30 * * * * cd ~/szang/toraAppMonitor && /usr/bin/python toraAppMonitor.py >> crontab.log
 # note: system ENVS such as (/etc/profile) or user ENVS such as ~/.bashrc are not set under crontab execution.
+
+# find process pid
+> ps ax | grep mysql
 ```
 
 
@@ -208,4 +211,17 @@ $intp.allDefinedNames # it is an interpret variable
 ```shell
 # How to run spring-boot app locally using spring-boot:run maven goal
 > mvn spring-boot:run -Dspring.profiles.active=local
+```
+
+## MySql
+```shell
+# reset password by having a tmp file with the following line
+# ALTER USER 'root'@'localhost' IDENTIFIED BY '123456';
+> mysqld --init-file=<absolute_path>/tmp
+
+# start mysql
+> brew services start mysql
+
+# connect to mysql as root user with password
+> mysql -u root -p 
 ```
