@@ -11,7 +11,7 @@ tag: java
 
 
 
-Updated: 2021-08-14
+Updated: 2021-09-05
 
 # Spring Design
 
@@ -1830,5 +1830,349 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
             
             // ...
     }    
+}
+```
+
+# Spring MVC - Design and Source
+
+![]({{ '/styles/images/zhangxin-framework-spring/spring-mvc-design.png' | prepend: site.baseurl }})
+
+---
+
+### HandlerMapping
+
+__How each type of request (different endpoint, different method, different parameters) is mapped to different handlers (written by developers)?__ The `HandlerMapping` interface has different implementations to answer that question, such as `SimpleUrlHandlerMapping`, `DefaultAnnotationHandlerMapping`. It not only provides flexibility for customizable mapping mechanism but also decouples the mapping logic from handling logic. On the other hand, `HandlerExecutionChain` binds the handler with a list of interceptors that provide pre-handling and post-handling processing logic.
+
+```java
+/**
+ * Interface to be implemented by objects that define a mapping between
+ * requests and handler objects.
+ * 
+ * <p>HandlerMapping implementations can support mapped interceptors but do not
+ * have to. A handler will always be wrapped in a {@link HandlerExecutionChain}
+ * instance, optionally accompanied by some {@link HandlerInterceptor} instances.
+ * The DispatcherServlet will first call each HandlerInterceptor's
+ * <code>preHandle</code> method in the given order, finally invoking the handler
+ * itself if all <code>preHandle</code> methods have returned <code>true</code>.
+ *
+ * <p>Note: Implementations can implement the {@link org.springframework.core.Ordered}
+ * interface to be able to specify a sorting order and thus a priority for getting
+ * applied by DispatcherServlet. Non-Ordered instances get treated as lowest priority.
+ */
+public interface HandlerMapping {
+
+	/**
+	 * Return a handler and any interceptors for this request. The choice may be made
+	 * on request URL, session state, or any factor the implementing class chooses.
+	 */
+	HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception;
+}
+
+/**
+ * Implementation of the {@link org.springframework.web.servlet.HandlerMapping}
+ * interface that maps handlers based on HTTP paths expressed through the
+ * {@link RequestMapping} annotation at the type or method level.
+ *
+ * <p>Registered by default in {@link org.springframework.web.servlet.DispatcherServlet}
+ * on Java 5+. 
+ *
+ * Annotated controllers are usually marked with the {@link Controller} stereotype
+ * at the type level. This is not strictly necessary when {@link RequestMapping} is
+ * applied at the type level (since such a handler usually implements the
+ * {@link org.springframework.web.servlet.mvc.Controller} interface). However,
+ * {@link Controller} is required for detecting {@link RequestMapping} annotations
+ * at the method level if {@link RequestMapping} is not present at the type level.
+ */
+public class DefaultAnnotationHandlerMapping extends AbstractDetectingUrlHandlerMapping {}
+
+/**
+ * Implementation of the {@link org.springframework.web.servlet.HandlerMapping}
+ * interface to map from URLs to request handler beans. Supports both mapping to bean
+ * instances and mapping to bean names; the latter is required for non-singleton handlers.
+ */
+public class SimpleUrlHandlerMapping extends AbstractUrlHandlerMapping {}
+
+/**
+ * Handler execution chain, consisting of handler object and any handler interceptors.
+ * Returned by HandlerMapping's {@link HandlerMapping#getHandler} method.
+ */
+public class HandlerExecutionChain {
+
+	/**
+	 * Create a new HandlerExecutionChain.
+	 */
+	public HandlerExecutionChain(Object handler) {
+		this(handler, null);
+	}
+
+	/**
+	 * Create a new HandlerExecutionChain.
+	 */
+	public HandlerExecutionChain(Object handler, HandlerInterceptor[] interceptors) {}
+
+
+	/**
+	 * Return the handler object to execute.
+	 */
+	public Object getHandler() {}
+
+	public void addInterceptor(HandlerInterceptor interceptor) {}
+
+	public void addInterceptors(HandlerInterceptor[] interceptors) {}
+
+	/**
+	 * Return the array of interceptors to apply (in the given order).
+	 */
+	public HandlerInterceptor[] getInterceptors() {}
+}
+```
+
+---
+
+### HandlerAdaptor
+
+To add more flexibility and more importantly to separate handler specific logic from handling model and view, `HandlerAdaptor` is designed to handle the additional logic and pass down the handler specific logic. Once a handler is identified through the above `HandlerMapping` mechanism, a __"supportive"__ `HandlerAdaptor` will be identified and will then be invoked in `DispatcherServlet`.
+
+```java
+/**
+ * This interface is used to allow the DispatcherServlet to be indefinitely
+ * extensible. The DispatcherServlet accesses all installed handlers through this
+ * interface, meaning that it does not contain code specific to any handler type.
+ *
+ * <p>Note that a handler can be of type Object. This is to enable handlers from
+ * other frameworks to be integrated with this framework without custom coding.
+ *
+ * <p>This interface is not intended for application developers. It is available
+ * to handlers who want to develop their own web workflow.
+ *
+ * <p>Note: Implementations can implement the Ordered interface to be able to
+ * specify a sorting order and thus a priority for getting applied by
+ * DispatcherServlet. Non-Ordered instances get treated as lowest priority.
+ */
+public interface HandlerAdapter {
+	
+	/**
+	 * Given a handler instance, return whether or not this HandlerAdapter can
+	 * support it. Typical HandlerAdapters will base the decision on the handler
+	 * type. HandlerAdapters will usually only support one handler type each.
+	 */
+	boolean supports(Object handler); 
+	
+	/**
+	 * Use the given handler to handle this request.
+	 */
+	ModelAndView handle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception;
+}
+
+/**
+ * Implementation of the {@link org.springframework.web.servlet.HandlerAdapter}
+ * interface that maps handler methods based on HTTP paths, HTTP methods and
+ * request parameters expressed through the {@link RequestMapping} annotation.
+ */
+public class AnnotationMethodHandlerAdapter implements HandlerAdapter {
+    public boolean supports(Object handler) {
+		return getMethodResolver(handler).hasHandlerMethods();
+	}
+
+    // handle() omitted...
+}
+
+/**
+ * Adapter to use the plain {@link Controller} workflow interface with
+ * the generic {@link org.springframework.web.servlet.DispatcherServlet}.
+ */
+public class SimpleControllerHandlerAdapter implements HandlerAdapter {
+    public boolean supports(Object handler) {
+		return (handler instanceof Controller);
+	}
+	
+    // handle() omitted...
+}
+
+/**
+ * Adapter to use the plain {@link org.springframework.web.HttpRequestHandler}
+ * interface with the generic {@link org.springframework.web.servlet.DispatcherServlet}.
+ */
+public class HttpRequestHandlerAdapter implements HandlerAdapter {
+    public boolean supports(Object handler) {
+		return (handler instanceof HttpRequestHandler);
+	}
+
+    // handle() omitted...
+}
+```
+
+---
+
+### ViewResolver
+
+`ViewResolver` is used to map each type of response to a view template. XML view, Marker view, internal resource view, to name a few...
+
+```java
+/**
+ * Interface to be implemented by objects that can resolve views by name.
+ */
+public interface ViewResolver {
+		
+	/** 
+	 * Resolve the given view by name.
+	 */
+	View resolveViewName(String viewName, Locale locale) throws Exception;
+}
+
+/**
+ * Convenient base class for {@link org.springframework.web.servlet.ViewResolver}
+ * implementations. Caches {@link org.springframework.web.servlet.View} objects
+ * once resolved. 
+ *
+ * <p>Subclasses need to implement the {@link #loadView} template method,
+ * building the View object for a specific view name and locale.
+ */
+public abstract class AbstractCachingViewResolver extends WebApplicationObjectSupport implements ViewResolver {}
+
+/**
+ * Implementation of ViewResolver that uses bean definitions in an
+ * XML file, specified by resource location. The file will typically
+ * be located in the WEB-INF directory; default is "/WEB-INF/views.xml".
+ */
+public class XmlViewResolver extends AbstractCachingViewResolver implements Ordered, DisposableBean {}
+
+/**
+ * Abstract base class for URL-based views. Provides a consistent way of
+ * holding the URL that a View wraps, in the form of a "url" bean property.
+ */
+public abstract class AbstractUrlBasedView extends AbstractView implements InitializingBean {}
+
+/**
+ * Adapter base class for template-based view technologies such as
+ * Velocity and FreeMarker, with the ability to use request and session
+ * attributes in their model and the option to expose helper objects
+ * for Spring's Velocity/FreeMarker macro library.
+ */
+public abstract class AbstractTemplateView extends AbstractUrlBasedView {}
+
+/**
+ * View using the FreeMarker template engine.
+ */
+public class FreeMarkerView extends AbstractTemplateView {}
+```
+
+---
+
+### DispatcherServlet
+
+`DispatcherServlet` is the centralized component to put together everything above and execute/complete the lifecycle of a user HTTP request.
+
+![]({{ '/styles/images/zhangxin-framework-spring/spring-mvc-lifecycle.jpeg' | prepend: site.baseurl }})
+
+```java
+/**
+ * Central dispatcher for HTTP request handlers/controllers,
+ * e.g. for web UI controllers or HTTP-based remote service exporters.
+ * Dispatches to registered handlers for processing a web request.
+ *
+ * <p>This servlet is very flexible: It can be used with just about any workflow,
+ * with the installation of the appropriate adapter classes. It offers the
+ * following functionalities:
+ *
+ * 1. It is based around a JavaBeans configuration mechanism.
+ *
+ * 2. It can use any {@link HandlerMapping} implementation - pre-built or provided
+ * as part of an application - to control the routing of requests to handler objects.
+ *
+ * 3. It can use any {@link HandlerAdapter}; this allows for using any handler interface.
+ *
+ * 4. The dispatcher's exception resolution strategy can be specified via a
+ * {@link HandlerExceptionResolver}, for example mapping certain exceptions to
+ * error pages. Default is none. Additional HandlerExceptionResolvers can be added
+ * through the application context.
+ *
+ * 5. Its view resolution strategy can be specified via a {@link ViewResolver}
+ * implementation, resolving symbolic view names into View objects. 
+ *
+ * 6. Its locale resolution strategy is determined by a {@link LocaleResolver}.
+ * Out-of-the-box implementations work via HTTP accept header, cookie, or session.
+ * The LocaleResolver bean name is "localeResolver"; default is
+ * {@link org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver}.
+ *
+ * 7. Its theme resolution strategy is determined by a {@link ThemeResolver}.
+ * Implementations for a fixed theme and for cookie and session storage are included.
+ * The ThemeResolver bean name is "themeResolver"; default is
+ * {@link org.springframework.web.servlet.theme.FixedThemeResolver}.
+ */
+public class DispatcherServlet extends FrameworkServlet {
+
+	/**
+	 * Process the actual dispatching to the handler.
+	 * <p>The handler will be obtained by applying the servlet's HandlerMappings in order.
+	 * The HandlerAdapter will be obtained by querying the servlet's installed
+	 * HandlerAdapters to find the first that supports the handler class.
+	 * <p>All HTTP methods are handled by this method. It's up to HandlerAdapters or
+	 * handlers themselves to decide which methods are acceptable.
+	 */
+	protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		HttpServletRequest processedRequest = request;
+		HandlerExecutionChain mappedHandler = null;
+		int interceptorIndex = -1;
+
+		// Expose current LocaleResolver and request as LocaleContext.
+
+		// Expose current RequestAttributes to current thread.
+		
+		try {
+			ModelAndView mv = null;
+			try {
+				// Determine handler for the current request.
+				mappedHandler = getHandler(processedRequest, false);
+				if (mappedHandler == null || mappedHandler.getHandler() == null) {
+					noHandlerFound(processedRequest, response);
+					return;
+				}
+
+				// Apply preHandle methods of registered interceptors.
+				HandlerInterceptor[] interceptors = mappedHandler.getInterceptors();
+				if (interceptors != null) {
+					for (int i = 0; i < interceptors.length; i++) {
+						HandlerInterceptor interceptor = interceptors[i];
+						if (!interceptor.preHandle(processedRequest, response, mappedHandler.getHandler())) {
+							triggerAfterCompletion(mappedHandler, interceptorIndex, processedRequest, response, null);
+							return;
+						}
+						interceptorIndex = i;
+					}
+				}
+
+				// Actually invoke the handler.
+				HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
+				mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
+
+				// Apply postHandle methods of registered interceptors.
+				if (interceptors != null) {
+					for (int i = interceptors.length - 1; i >= 0; i--) {
+						HandlerInterceptor interceptor = interceptors[i];
+						interceptor.postHandle(processedRequest, response, mappedHandler.getHandler(), mv);
+					}
+				}
+			}
+			catch (Exception ex) {
+                // ...
+			}
+
+			// Trigger after-completion for successful outcome.
+			triggerAfterCompletion(mappedHandler, interceptorIndex, processedRequest, response, null);
+		}
+
+		catch (Exception ex) {
+            // ...
+		}
+		catch (Error err) {
+            // ...
+		}
+
+		finally {
+			// Clear request attributes.
+			requestAttributes.requestCompleted();
+		}
+	}
 }
 ```
