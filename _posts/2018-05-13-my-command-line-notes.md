@@ -105,8 +105,11 @@ jar -tf xxxx.jar | grep [udf_mainClass]
 # try to connect to the host using telnet protocol see if the connect is through or there is any firewall blocking
 > telnet [host] [port]
 
+# see what is going on on this process
+> ps -ef | grep zookeeper
+
 # see what is going on on this port
-> ps -ef | grep 7600
+> netstat -nplt | grep 2181
 
 # kill whatever occupies the port
 > ps -ef | grep 7607 | cut -d ' ' -f 2 | xargs kill
