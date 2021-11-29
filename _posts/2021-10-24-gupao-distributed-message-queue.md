@@ -12,7 +12,7 @@ tag: java
 
 
 
-Last Update: 11-13-2021
+Last Update: 11-28-2021
 
 
 
@@ -569,7 +569,7 @@ _Reference_
 
 ## Data Persistence
 
-A partition directory on disk stores `index files, log files, timeindex files, snapshot files, leader-epoch-checkpoint files, partition.metadata files` __for each data segment__. When a data segment reaches its configurable size upper bound, a new segment will be created to store incoming data.
+A partition directory on disk stores index files, log files, timeindex files, snapshot files, leader-epoch-checkpoint files, partition.metadata files __for each data segment__. When a data segment reaches its configurable size upper bound, a new segment will be created to store incoming data.
 
 ![]({{ '/styles/images/gupao-distributed-message-queue/kafka-segment.png' | prepend: site.baseurl }})
 
